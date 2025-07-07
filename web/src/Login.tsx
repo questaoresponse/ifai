@@ -13,7 +13,8 @@ function Login(){
     const showPopup = useRef<any>(null);
 
     
-    const submit = () => {
+    const submit = (e: any) => {
+        e.preventDefault();
         const email = (document.getElementById('loginEmail') as any).value;
         const senha = (document.getElementById('loginSenha') as any).value;
 

@@ -28,7 +28,8 @@ function Registro(){
     }
 
 
-    const submit = async () => {
+    const submit = (e: any) => {
+        e.preventDefault();
         if (usuarioLogado !== undefined ) return;
 
         const nome = (document.getElementById('regNome')! as any).value;
