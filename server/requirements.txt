@@ -4,7 +4,7 @@ google-api-python-client
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
-dnspython
+# dnspython
 requests
-validate-email-address
-py3dns
+# validate-email-address
+# py3dns
