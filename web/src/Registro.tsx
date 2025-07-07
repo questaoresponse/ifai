@@ -42,7 +42,7 @@ function Registro(){
         // const response = await auth.post(server + "/email_check", { matricula });
         
         // if (response.data.result && response.data.is_valid){
-        const regex = email.match(/11([A-Z+])0(\d+)$/)
+        const regex = matricula.match(/11([A-Z]+)0(\d+)$/)!;
         if ( regex[1] in cursos && Number(regex[2]) <= cursos[regex[1]] ){
             createUserWithEmailAndPassword(getAuth(), email, senha)
             .then((userCredential) => {
@@ -69,7 +69,7 @@ function Registro(){
 
     return !usuarioLogado ? <>
          <div id="signup" className="page">
-            <main id="sign-container">
+            <form onSubmit={submit} id="sign-container">
                 <img id="logo" src={logo_src} width="150px"/>
                 <div className="input-group">
                     <label>Nome:</label>
@@ -92,8 +92,8 @@ function Registro(){
 
                 <p>Já possui conta? <Link to="/login">Fazer login</Link></p>
 
-                <button onClick={submit} id="btn-submit" type="submit">Entrar</button>
-            </main>
+                <button id="btn-submit" type="submit">Entrar</button>
+            </form>
         </div>
   </> : <></>
 }

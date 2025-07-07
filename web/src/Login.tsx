@@ -28,7 +28,7 @@ function Login(){
 
     return !usuarioLogado ? <>
         <div id="signin" className="page">
-            <main id="sign-container">
+            <form onSubmit={submit} id="sign-container">
                 <img id="logo" src={logo_src} width="150px"/>
                 <div className="input-group">
                     <label>Email:</label>
@@ -41,8 +41,8 @@ function Login(){
 
                 <p>Não possui conta? <Link to="/registro">Registre-se</Link></p>
 
-                <button onClick={submit} id="btn-submit" type="submit">Entrar</button>
-            </main>
+                <button id="btn-submit" type="submit">Entrar</button>
+            </form>
         </div>
         <Alert showPopup={showPopup}></Alert>
     </> : <></>

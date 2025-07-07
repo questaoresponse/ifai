@@ -14,6 +14,7 @@ app = Flask(__name__)
 CORS(app)
 
 app.config["UPLOAD_FOLDER"] = "uploads"
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # CONFIGURAÇÃO
 SERVICE_ACCOUNT_FILE = 'service_account.json'
