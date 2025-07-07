@@ -6,9 +6,10 @@ import io
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
 import os
 import time
-import requests
-import smtplib
-import dns.resolver
+# import requests
+# import smtplib
+# import dns.resolver
+from validate_email_address import validate_email
 
 app = Flask(__name__)
 CORS(app)
@@ -114,31 +115,33 @@ def receive_and_upload_file(FOLDER_ID, filename):
     })
 
 def verify_email(matricula: str):
-    try:
-        email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
-        domain = email.split('@')[1]
+    email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
+    return validate_email(email, verify=True)  # verify=True tenta contato via SMTP
+    # try:
+    #     email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
+    #     domain = email.split('@')[1]
 
-        # Obter servidor MX (Mail Exchange) do domínio
-        records = dns.resolver.resolve(domain, 'MX')
-        mx_record = str(records[0].exchange).rstrip('.')
+    #     # Obter servidor MX (Mail Exchange) do domínio
+    #     records = dns.resolver.resolve(domain, 'MX')
+    #     mx_record = str(records[0].exchange).rstrip('.')
 
-        # Conectar ao servidor SMTP
-        server = smtplib.SMTP()
-        server.set_debuglevel(0)
-        server.connect(mx_record)
-        server.helo('example.com')
-        server.mail('test@example.com')  # remetente fake (pode ser qualquer um)
-        code, message = server.rcpt(email)  # faz a verificação
-        server.quit()
+    #     # Conectar ao servidor SMTP
+    #     server = smtplib.SMTP()
+    #     server.set_debuglevel(0)
+    #     server.connect(mx_record)
+    #     server.helo('example.com')
+    #     server.mail('test@example.com')  # remetente fake (pode ser qualquer um)
+    #     code, message = server.rcpt(email)  # faz a verificação
+    #     server.quit()
 
-        if code == 250:
-            return True  # endereço de e-mail provavelmente existe
-        else:
-            return False
+    #     if code == 250:
+    #         return True  # endereço de e-mail provavelmente existe
+    #     else:
+    #         return False
 
-    except Exception as e:
-        print("Erro:", e)
-        return False
+    # except Exception as e:
+    #     print("Erro:", e)
+    #     return False
 
 @app.route("/posts", methods=["POST"])
 def posts():
