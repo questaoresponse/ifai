@@ -189,8 +189,8 @@ def email_check():
 def home():
     return send_file("public/index.html")
 
-@app.route("/<filename>")
-def route():
+@app.route("/<route>")
+def route(route):
     return send_file("public/index.html")
 
 @app.route("/favicon.ico")
