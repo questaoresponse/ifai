@@ -1,0 +1,384 @@
+body {
+  background: #d4ded6;
+  color: #1e3231;
+}
+#studyDeckBtn {
+  background: rgb(55, 102, 189);
+}
+#studyDeckBtn:hover {
+  background: rgb(45, 82, 169);
+}
+.container {
+  max-width: 1200px;
+//   margin: 0 auto;
+}
+
+.header_logo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.vl {
+  width: 1px;
+  background-color: #5b9872;
+  height: 80px;
+}
+
+h1 {
+  color: #1e3231;
+  font-size: 1.8rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 5px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+  background: #347b3e;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 10px;
+}
+
+.btn:hover {
+  background: darkgreen;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #347b3e;
+  color: #347b3e;
+}
+
+.btn-outline:hover {
+  background: #347b3e;
+  color: white;
+}
+
+.btn-danger {
+  background: #da4c4c;
+}
+
+.btn-danger:hover {
+  background: #ca0000;
+}
+
+.btn-success {
+  background: #248232;
+}
+
+.btn-success:hover {
+  background: #1b5c24;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 3px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #347b3e;
+  outline: none;
+}
+
+.flex-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.flex-row > * {
+  flex: 1;
+}
+
+.decks-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.deck {
+  background: #fff;
+  border-radius: 5px;
+  padding: 15px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  position: relative;
+  border: 1px solid #d0d0d0;
+}
+
+.deck h3 {
+  color: #1e3231;
+  margin-bottom: 5px;
+}
+
+.deck p {
+  color: #666;
+  font-size: 13px;
+}
+
+.deck-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.deck-actions button {
+  background: rgba(255, 255, 255, 0.7);
+  border: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.deck-actions button:hover {
+  background: #da4c4c;
+  color: white;
+}
+
+.flashcards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.flashcard {
+  background: #fff;
+  border-radius: 5px;
+  padding: 15px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  height: 180px;
+  cursor: pointer;
+  border: 1px solid #d0d0d0;
+  position: relative;
+}
+
+.flashcard-front,
+.flashcard-back {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.flashcard-front {
+  background: #fff;
+  color: #333;
+}
+
+.flashcard-back {
+  background: #347b3e;
+  color: white;
+  display: none;
+}
+
+.flashcard.show-back .flashcard-front {
+  display: none;
+}
+
+.flashcard.show-back .flashcard-back {
+  display: flex;
+}
+
+.card-actions {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.study-mode {
+  padding: 20px;
+  text-align: center;
+}
+
+.study-card {
+  background: #fff;
+  border-radius: 5px;
+  height: 300px;
+  max-width: 500px;
+  margin: 0 auto 20px;
+  cursor: pointer;
+  border: 1px solid #d0d0d0;
+  user-select: none;
+}
+
+.study-card-front,
+.study-card-back {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  border-radius: 5px;
+}
+
+.study-card-front {
+  background: #fff;
+  color: #333;
+}
+
+.study-card-back {
+  background: #347b3e;
+  color: white;
+  display: none;
+}
+
+.study-card.show-back .study-card-front {
+  display: none;
+}
+
+.study-card.show-back .study-card-back {
+  display: flex;
+}
+
+.study-card h3 {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.progress-bar {
+  width: 100%;
+  background: #e0e0e0;
+  border-radius: 3px;
+  height: 8px;
+  margin: 15px 0;
+}
+
+.progress {
+  height: 100%;
+  background: #248232;
+  border-radius: 3px;
+  width: 0%;
+}
+
+.study-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 2 por linha */
+    justify-content: center;
+    gap: 5px;
+    margin-top: 15px;
+}
+.study-controls > *{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  margin: 20px 0;
+}
+
+.empty-state i {
+  font-size: 36px;
+  color: #347b3e;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+#studyDeckBtn {
+  background: rgb(55, 102, 189);
+}
+#studyDeckBtn:hover {
+  background: rgb(45, 82, 169);
+}
+
+#flashcard-menu{
+  position: fixed;
+  display: block;
+  background-color: #eee;
+  width: 60%;
+  height: 50%;
+  top: 20%;
+  left: 20%;
+  top: 25%;
+}
+#fm-btns{
+    position: relative;
+    display: flex;
+    flex-direction: row;
+}
+#fm-ask, #fm-cancel{
+    position: relative;
+    width: fit-content;
+    background-color: green;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+#flash-btns{ 
+    display: grid;
+    gap: 16px;
+    margin-bottom: 15px;
+    grid-template-columns: repeat(4, 1fr); /* 2 por linha */
+}
+
+@media (max-width: 768px) {
+    .flex-row {
+        flex-direction: column;
+    }
+
+    .decks-container,
+    .flashcards-container {
+        grid-template-columns: 1fr;
+    }
+
+    .study-card {
+        height: 250px;
+    }
+    #flash-btns{
+        grid-template-columns: repeat(2, 1fr); /* 2 por linha */
+        gap: 16px;
+    }
+    #flash-btns > button{
+        display: inline-block;
+        width: 100%;
+    }
+}

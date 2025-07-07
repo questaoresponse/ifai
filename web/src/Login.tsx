@@ -1,0 +1,51 @@
+import { useRef } from "react";
+import { Link } from "react-router-dom";
+import { getAuth, signInWithEmailAndPassword, type UserCredential } from "firebase/auth";
+import logo_src from "./assets/static/ifai2.png";
+import { useGlobal } from "./Global";
+import "./Sign.scss";
+import Alert from "./Alert";
+
+function Login(){
+    const { usuarioLogado, setUsuarioLogado } = useGlobal();
+
+
+    const showPopup = useRef<any>(null);
+
+    
+    const submit = () => {
+        const email = (document.getElementById('loginEmail') as any).value;
+        const senha = (document.getElementById('loginSenha') as any).value;
+
+        signInWithEmailAndPassword(getAuth(), email, senha)
+        .then((user: UserCredential) => {
+            setUsuarioLogado(user.user);
+        })
+        .catch(() => {
+            showPopup.current("E-mail ou senha incorreto.");
+        });
+    };
+
+    return !usuarioLogado ? <>
+        <div id="signin" className="page">
+            <main id="sign-container">
+                <img id="logo" src={logo_src} width="150px"/>
+                <div className="input-group">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" required/>
+                </div>
+                <div className="input-group">
+                    <label>Senha:</label>
+                    <input type="password" id="loginSenha" required/>
+                </div>
+
+                <p>Não possui conta? <Link to="/registro">Registre-se</Link></p>
+
+                <button onClick={submit} id="btn-submit" type="submit">Entrar</button>
+            </main>
+        </div>
+        <Alert showPopup={showPopup}></Alert>
+    </> : <></>
+}
+
+export default Login;

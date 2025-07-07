@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil</title>
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="firebase.js"></script>
+</head>
+
+<body>
+
+  <script src="https://kit.fontawesome.com/9807db5824.js" crossorigin="anonymous"></script>
+
+  <main>
+    <br>
+    <div class="header_logo">
+      <img src="static/ifai2.png" width="150px">
+      <div class="vl"></div>
+      <h1>Perfil</h1>
+    </div>
+    <br>
+    <hr>
+    <br>
+
+    <section id="perfil">
+      <h2>Perfil de <span id="profileName">Carregando...</span></h2>
+      <div id="profile-info">
+        <div class="avatar-container">
+          <div class="avatar-wrapper">
+            <img src="static/avatar.png" alt="Avatar do usuário" id="avatar">
+            <div class="edit-icon" id="editIcon"><i class="fas fa-pencil-alt"></i></div>
+          </div>
+        </div>
+      </div>
+      
+      
+      <button id="removePhotoBtn" style="display: none; margin-top: 10px; background-color: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Remover Foto</button>
+      <input type="file" id="fileInput" style="display: none;" accept="image/*">
+      <div>
+        <p><strong>Nome:</strong> <span id="displayName">Carregando...</span></p>
+        <p><strong>ID:</strong> <span id="displayId">Carregando...</span></p>
+        <p><strong>UID:</strong> <span id="displayUID">Carregando...</span></p>
+      </div>
+      <br>
+      <p class="aluno-tag"><i class="fa-solid fa-user"></i>&nbsp;Aluno</p>
+    </section>
+
+    <script src="perfil.mjs" type="module"></script>
+
+  </main>
+
+  <script src="script.js"></script>
+  <script src="header.js"></script>
+
+</body>
+
+</html>

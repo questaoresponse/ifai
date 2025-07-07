@@ -1,0 +1,10 @@
+#feed{
+    .image{
+        width: 100%;
+        border-radius: 20px;
+        aspect-ratio: 16/9;
+    }
+    @media screen and (min-width: 769px){
+        width: 33.3%;
+    }
+}

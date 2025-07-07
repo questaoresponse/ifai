@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amigos</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="firebase.js"></script>
+</head>
+<body>
+  <script src="https://kit.fontawesome.com/9807db5824.js" crossorigin="anonymous"></script>
+  <main>
+    <br>
+    <div class="header_logo">
+      <img src="static/ifai2.png" width="150px">
+      <div class="vl"></div>
+      <h1>Amigos</h1>
+    </div>
+    <br>
+    <hr>
+    <br>
+    
+
+    <div id="mainlists">
+      <section id="pedidos">
+        <div class="fqtop" bis_skin_checked="1"><h2>Pedidos de Amizade</h2></div>
+        <div id="friendRequests" class="PA"></div>
+      </section>
+      
+      <section id="lista-amigos">
+        <h2>Meus Amigos</h2>
+        <div class="search-box" bis_skin_checked="1">
+          <input type="text" id="searchFriendsInput" placeholder="Pesquisar amigo">
+          <button id="searchButton" onclick="buscarAmigos()"><i class="fas fa-search" aria-hidden="true"></i></button>
+        </div>
+        <br><br>
+        <div id="friendsList"></div>
+      </section>
+    </div>
+
+  </main>
+
+  <script src="script.mjs" type="module"></script>
+  <script src="header.mjs" type="module"></script>
+  <script src="amigos.mjs" type="module"></script>
+</body>
+</html>

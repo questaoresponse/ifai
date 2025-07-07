@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversas</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="Chats.css">
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="firebase.js"></script>
+</head>
+
+<body>
+  <script src="https://kit.fontawesome.com/9807db5824.js" crossorigin="anonymous"></script>
+  <main>
+
+    <br>
+    <div class="header_logo">
+      <img src="static/ifai2.png" width="150px">
+      <div class="vl"></div>
+      <h1>Conversas</h1>
+    </div>
+
+    
+    <h4 class="hidden" id="resultadoPA"></h4>
+
+    <br>
+
+     
+
+  </main>
+  <div class="chatdiv" style="display: flex;
+    justify-content: center" bis_skin_checked="1"><section id="history">
+      <span class="icone" aria-hidden="true"><i class="fa-solid fa-comment-dots" aria-hidden="true" style="margin: 0 auto;"></i></span>
+      <h2 style="display: inline-flex;">Conversas</h2>
+
+      <div id="friendList"></div>
+    </section><section id="chat">
+      <p><i class="fa-solid fa-lock-open"></i>&nbsp;Sem criptografia no momento</p>
+
+      <div id="chat-box">
+        <div id="chat-messages"></div>
+        <div id="typingIndicatorContainer" style="display: none; text-align: center; margin: 10px 0;"></div>
+
+        <div id="chat-input">
+          <textarea id="messageInput" placeholder="Digite sua mensagem"></textarea>
+          <button onclick="enviarMensagem()">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+
+    </section></div>
+  <script src="script.mjs" type="module"></script>
+  <script src="header.mjs" type="module"></script>
+  <script src="chats.mjs" type="module"></script>
+</body>
+</html>
