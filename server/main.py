@@ -6,10 +6,9 @@ import io
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
 import os
 import time
-# import requests
+import requests
 # import smtplib
 # import dns.resolver
-from validate_email_address import validate_email
 
 app = Flask(__name__)
 CORS(app)
@@ -115,33 +114,34 @@ def receive_and_upload_file(FOLDER_ID, filename):
     })
 
 def verify_email(matricula: str):
-    email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
-    return validate_email(email, verify=True)  # verify=True tenta contato via SMTP
-    # try:
-    #     email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
-    #     domain = email.split('@')[1]
+    return True
+#     email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
+#     return validate_email(email, verify=True)  # verify=True tenta contato via SMTP
+#     # try:
+#     #     email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
+#     #     domain = email.split('@')[1]
 
-    #     # Obter servidor MX (Mail Exchange) do domínio
-    #     records = dns.resolver.resolve(domain, 'MX')
-    #     mx_record = str(records[0].exchange).rstrip('.')
+#     #     # Obter servidor MX (Mail Exchange) do domínio
+#     #     records = dns.resolver.resolve(domain, 'MX')
+#     #     mx_record = str(records[0].exchange).rstrip('.')
 
-    #     # Conectar ao servidor SMTP
-    #     server = smtplib.SMTP()
-    #     server.set_debuglevel(0)
-    #     server.connect(mx_record)
-    #     server.helo('example.com')
-    #     server.mail('test@example.com')  # remetente fake (pode ser qualquer um)
-    #     code, message = server.rcpt(email)  # faz a verificação
-    #     server.quit()
+#     #     # Conectar ao servidor SMTP
+#     #     server = smtplib.SMTP()
+#     #     server.set_debuglevel(0)
+#     #     server.connect(mx_record)
+#     #     server.helo('example.com')
+#     #     server.mail('test@example.com')  # remetente fake (pode ser qualquer um)
+#     #     code, message = server.rcpt(email)  # faz a verificação
+#     #     server.quit()
 
-    #     if code == 250:
-    #         return True  # endereço de e-mail provavelmente existe
-    #     else:
-    #         return False
+#     #     if code == 250:
+#     #         return True  # endereço de e-mail provavelmente existe
+#     #     else:
+#     #         return False
 
-    # except Exception as e:
-    #     print("Erro:", e)
-    #     return False
+#     # except Exception as e:
+#     #     print("Erro:", e)
+#     #     return False
 
 @app.route("/posts", methods=["POST"])
 def posts():
@@ -177,6 +177,38 @@ def perfil():
         filename = request.files["file"].filename
         return receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}"), 200
 
+# email = "catce.2025111ISINF0063@aluno.ifpi.edu.br"
+# url = "https://api.emailawesome.com/api/validations/email_validation"
+# headers = {
+#     "x-api-key": "SWW5LBHeDjaTstmNkQcnnUspcXQ6qhm9OSeu8pHb",
+#     "Content-Type": "application/json"
+# }
+# payload = {
+#     "email": email,
+#     "results_callback": {
+#         "url": "https://6v9s4f5f-5170.brs.devtunnels.ms/verification",
+#         "method": "POST",
+#     }
+# }
+
+# response = requests.post(url, headers=headers, json=payload)
+
+# params = {
+#     "email": email,
+#     "email_adress_status": "VALID",
+#     "status": "COMPLETE"
+# }
+# response = requests.get(url, headers=headers, params=params)
+# if response.status_code == 200:
+#     dados = response.json()
+#     print(dados)
+#     if dados["status"] == "deliverable":
+#         print(f"O e-mail {email} é válido.")
+#     else:
+#         print(f"O e-mail {email} não é válido: {dados['reason']}")
+# else:
+#     print(f"Erro na verificação: {response.status_code}")
+
 @app.route("/email_check", methods=["POST"])
 def email_check():
     data = request.get_json()
@@ -186,7 +218,12 @@ def email_check():
         return jsonify({ "result": True, "is_valid": verify_email(matricula) })
     else:
         return jsonify({ "result": False })
-# def 
+
+@app.route("/verification", methods=["POST"])
+def verification():
+    data = request.get_json()
+    print(data)
+    return "", 200
 
 @app.route("/")
 def home():

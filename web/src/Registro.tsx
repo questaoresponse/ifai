@@ -5,10 +5,21 @@ import { collection, addDoc } from "firebase/firestore";
 import "./Sign.scss";
 import logo_src from "./assets/static/ifai2.png";
 import { useGlobal } from "./Global";
-import auth from "./Auth";
+// import auth from "./Auth";
 
+const cursos: { [key: string]: any } = {
+    ISINF: 120,
+    ISSEG: 40,
+    ISADM: 40,
+    ISMEC: 40,
+    TADS: 40,
+    TSEG: 40,
+    ISDEV: 40,
+}
+        // const regex = email.match(/11([A-Z+])0(\d+)$/)
+        // if ( regex[1] in cursos && Number(regex[2]) <= cursos[regex[1]] ){
 function Registro(){
-    const { db, server, usuarioLogado, setUsuarioLogado } = useGlobal();
+    const { db, usuarioLogado, setUsuarioLogado } = useGlobal();
 
     const [ incorrectMatricula, setIncorrectMatricula ] = useState(false);
 
@@ -28,9 +39,11 @@ function Registro(){
 
         if (!/^20[0-9]{2}(1|2)(1|2)(1|2)[A-Z]+0(120|1[0-1][0-9]|0[0-9]{2})$/.test(matricula)) return setIncorrectMatricula(true);
 
-        const response = await auth.post(server + "/email_check", { matricula });
+        // const response = await auth.post(server + "/email_check", { matricula });
         
-        if (response.data.result && response.data.is_valid){
+        // if (response.data.result && response.data.is_valid){
+        const regex = email.match(/11([A-Z+])0(\d+)$/)
+        if ( regex[1] in cursos && Number(regex[2]) <= cursos[regex[1]] ){
             createUserWithEmailAndPassword(getAuth(), email, senha)
             .then((userCredential) => {
                 const user = userCredential.user as User;
