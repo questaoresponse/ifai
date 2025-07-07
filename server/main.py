@@ -113,9 +113,9 @@ def receive_and_upload_file(FOLDER_ID, filename):
         'file_name': uploaded_file['name']
     })
 
-def verify_email(matricula):
+def verify_email(matricula: str):
     try:
-        email = f"catce.{matricula}@aluno.ifpi.edu.br"
+        email = f"catce.{matricula.lower()}@aluno.ifpi.edu.br"
         domain = email.split('@')[1]
 
         # Obter servidor MX (Mail Exchange) do domínio
