@@ -15,6 +15,17 @@ import Feed from './Feed';
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // import { faPencilAlt, faUser } from '@fortawesome/free-solid-svg-icons';
 
+const cursos: { [key: string]: any } = {
+    ISINF: "Integrado em Informática",
+    ISSEG: "Integrado em Segurança do Trabalho",
+    ISADM: "Integrado em Administração",
+    ISMEC: "Integrado em mecânica",
+    TADS: "Técnico em ADS",
+    TSEG: "Técnico em Segurança do Trabalho",
+    ISDEV: "Desenvolvedor",
+    LOAD: ""
+}
+
 interface Perfil {
     email: string,
     id: string,
@@ -216,7 +227,7 @@ const Perfil = () => {
                 <br />
                 <div className="aluno-tag">
                     <i className="fa-solid fa-user"></i>
-                    &nbsp;Aluno
+                    &nbsp;{cursos[currentUser ? currentUser.matricula.split("111")[1].split("0")[0] : "LOAD"]}
                 </div>
             </section>
             <Feed userPerfilUid={currentUser ? currentUser.uid : ""}></Feed>
