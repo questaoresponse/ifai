@@ -15,7 +15,7 @@ interface friendsInterface{
 }
 
 function Header(){
-    const { refs, usuarioLogado, setNavigate, logout } = useGlobal();
+    const { refs, mobile, usuarioLogado, setNavigate, logout } = useGlobal();
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -254,13 +254,6 @@ function Header(){
                     }
                 }
             });
-
-            document.getElementById('logoutBtn')!.addEventListener('click', function(e) {
-                e.preventDefault();
-                getAuth().signOut().then(() => {
-                    navigate("/login");
-                });
-            });
             
             document.addEventListener("DOMContentLoaded", function() {
                 setTimeout(atualizarNotificacoesChat, 2000); 
@@ -312,34 +305,32 @@ function Header(){
             })}</div>
 
             <nav id="mainnav">
-                <div className="header_logo">
+                {!mobile ? <div className="header_logo">
                     <Link to="/"><img src={logo_src} width="40px" alt="Logo" /></Link>
-                </div>
-                {/* <div className={ "defbtn" + (location.patthname=="")}>
-                    <i className="fa-solid fa-magnifying-glass" aria-hidden="true" style={{ color: "#9ecc9e" }}></i>
-                </div> */}
+                </div> : <></>}
+
                 <Link to="/" className={"defbtn" + (location.pathname === "/" ? " selected" : "")}>
                     <i className="fa-solid fa-house"></i>
+                </Link>
+
+                <Link to="/search" className={"defbtn" + (location.pathname === "/search" ? " selected" : "")}>
+                    <i className="fa-solid fa-magnifying-glass" aria-hidden="true" style={{ color: "#9ecc9e" }}></i>
                 </Link>
 
                 <Link to="/amigos" className={"defbtn" + (location.pathname === "/amigos" ? " selected" : "")}>
                     <i className="fa-solid fa-user-group"></i>
                 </Link>
 
-                <Link to="/chats" className={"defbtn" + (location.pathname === "/chats" ? " selected" : "")} id="chatButton">
+                { !mobile ? <Link to="/chats" className={"defbtn" + (location.pathname === "/chats" ? " selected" : "")} id="chatButton">
                     <i className="fa-solid fa-comment-dots"></i>
                     <span id="chatNotification"></span>
-                </Link>
+                </Link> : <></>}
 
                 <Link to="/perfil"className={"defbtn" + (location.pathname === "/perfil" ? " selected" : "")}>
                     <i className="fas fa-user" aria-hidden="true"></i>
                 </Link>
                 <Link to="/ferramentas" className={"defbtn" + (["/ferramentas", "/flashcards", "/add-posts"].includes(location.pathname) ? " selected" : "")}>
                     <i className="fa-solid fa-plus"></i>
-                </Link>
-                <Link to="/login" onClick={(e)=>{e.preventDefault();logout();}} className="defbtn" id="logoutBtn">
-                    <i className="fa-solid fa-arrow-right-from-bracket"></i>&nbsp;
-                    {/* <span className="btn-text" style={{ display: "none" }}>Sair</span> */}
                 </Link>
             </nav>
             </div>

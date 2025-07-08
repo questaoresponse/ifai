@@ -82,6 +82,13 @@
         margin-left: auto;
         margin-right: auto;
     }
+    #btn-menu{
+        position: absolute;
+        display: block;
+        top: 20px;
+        left: calc(100% - 30px);
+        cursor: pointer;
+;    }
     .value{
         font-weight: 900;
     }

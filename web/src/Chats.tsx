@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { atualizarNotificacoesChat, formatTime, formatTimestamp } from "./Functions";
-import { getDatabase, ref as dbRef, set, get, onValue, remove, update, push, query, orderByChild, serverTimestamp } from "firebase/database"
+import { getDatabase, ref as dbRef, set, query as queryDb, get, onValue, remove, update, push, orderByChild, serverTimestamp } from "firebase/database"
 import { getStorage, ref as storageRef, deleteObject, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import avatar_src from "./assets/static/avatar.png";
 import { useGlobal } from "./Global";
@@ -8,6 +8,7 @@ import "./Chats.scss";
 import "./Conversations.scss";
 import { useNavigate } from "react-router-dom";
 import Alert from "./Alert";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 interface audioInterface{
     audioSeconds: number,
@@ -17,7 +18,7 @@ interface audioInterface{
 }
 
 function Chats(){
-    const { mobile, usuarioLogado, refs: { respa } } = useGlobal();
+    const { db, mobile, usuarioLogado, refs: { respa } } = useGlobal();
 
     const navigate = useNavigate();
 
@@ -55,8 +56,8 @@ function Chats(){
             if (snapshot.exists()) {
                 snapshot.forEach((childSnapshot) => {
                     const uidAmigo = childSnapshot.key;
-                    get(dbRef(getDatabase(), "usuarios/" + uidAmigo)).then((snap) => {
-                        const userAmigo = snap.val();
+                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uidAmigo))).then(results=>{
+                        const userAmigo = results.docs[0].data();
                         const div = document.createElement("div");
                         div.classList.add("friend-item");
                         div.setAttribute("data-uid", uidAmigo);
@@ -94,7 +95,7 @@ function Chats(){
                             atualizarbadge(uidAmigo, badgeId);
                         }
         
-                        get(query(
+                        get(queryDb(
                             dbRef(getDatabase(), `chats/${chatId.current}`),
                             // orderByChild("timestamp"),
                             // limitToLast(1)
@@ -103,7 +104,7 @@ function Chats(){
                             friendList.appendChild(div);
                         });
         
-                        get(query(
+                        get(queryDb(
                             dbRef(getDatabase(), `chats/${chatId.current}`),
                             // orderByChild("timestamp"),
                             // limitToLast(1)
@@ -176,7 +177,7 @@ function Chats(){
     function marcarMensagensComoLidas() {
         if (!usuarioLogado || !chatId.current) return;
     
-        get(query(
+        get(queryDb(
             dbRef(getDatabase(),`chats/${chatId.current}`),
             orderByChild("timestamp")
         )).then((snapshot) => {
@@ -409,7 +410,7 @@ function Chats(){
     
             document.body.appendChild(barraOpcoes);
         }
-        onValue(query(
+        onValue(queryDb(
             dbRef(getDatabase(),`chats/${chatId.current}`),
             orderByChild("timestamp")
         ), (snapshot) => {

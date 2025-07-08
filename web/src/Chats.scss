@@ -86,6 +86,12 @@
             color: #1b5c24;
         }
     }
+    .friend-item{
+        display: flex;
+        flex-direction: row;
+        cursor: pointer;
+    }
+
     @media screen and (min-width: 769px){
         padding: 20px;
     }

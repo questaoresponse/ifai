@@ -1,0 +1,30 @@
+#settings{
+    .setting-item{
+        display: flex;
+        flex-direction: row;
+    }
+    .setting-item > *{
+        margin-top: auto;
+        margin-bottom: auto;
+        margin-right: 5px;
+    }
+    #logoutBtn{
+        background-color: rgb(218, 76, 76);
+        
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        display: flex;
+        
+        text-align: center;
+        justify-content: center;
+        align-content: center;
+        align-items: center;
+        width: fit-content;
+        padding: 5px;
+    }
+
+    #logoutBtn:hover{
+        background-color: rgb(202, 0, 0);
+    }
+}

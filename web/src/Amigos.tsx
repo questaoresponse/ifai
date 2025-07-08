@@ -195,23 +195,40 @@ function Amigos(){
     //     });
     // }
 
-    function aceitarPedido(uidSolicitante: any, div: any = null) {
-        if (!usuarioLogado) return;
-        set(dbRef(getDatabase(),`friends/${usuarioLogado!.uid}/${uidSolicitante}`), true);
-        set(dbRef(getDatabase(),`friends/${uidSolicitante}/${usuarioLogado!.uid}`), true);
-        const userDbRef = collection(db.current!, 'usuarios');
-        getDocs(query(userDbRef, where("uid", "in", [usuarioLogado!.uid, uidSolicitante]))).then(results=>{
-            results.forEach(result=>{
-                updateDoc(result.ref, { nFriends: result.data().nFriends + 1 });
-            })
+  function aceitarPedido(uidSolicitante: string) {
+    if (!usuarioLogado) return;
+
+    // Evita aceitar múltiplas vezes (lock temporário)
+    const alreadyAccepting = localStorage.getItem(`accepting-${uidSolicitante}`);
+    if (alreadyAccepting) return;
+    localStorage.setItem(`accepting-${uidSolicitante}`, "1");
+
+    // Adiciona como amigo para ambos
+    const updates = [
+        set(dbRef(getDatabase(), `friends/${usuarioLogado!.uid}/${uidSolicitante}`), true),
+        set(dbRef(getDatabase(), `friends/${uidSolicitante}/${usuarioLogado!.uid}`), true)
+    ];
+
+    // Atualiza contadores de amigos
+    const userDbRef = collection(db.current!, "usuarios");
+    getDocs(query(userDbRef, where("uid", "in", [usuarioLogado!.uid, uidSolicitante]))).then((results) => {
+        results.forEach((result) => {
+            updateDoc(result.ref, {
+                nFriends: result.data().nFriends + 1
+            });
         });
-        remove(dbRef(getDatabase(),`friendRequests/${usuarioLogado!.uid}/${uidSolicitante}`)).then(() => {
-            carregarAmigos();
-            if (div) {
-                div.innerHTML = `<strong>${div.querySelector("strong").textContent}</strong> <span><b>(Amigos)</b></span>`;
-            }
+    });
+
+    // Remove pedido e atualiza lista de solicitantes
+    Promise.all(updates).then(() => {
+        remove(dbRef(getDatabase(), `friendRequests/${usuarioLogado!.uid}/${uidSolicitante}`)).then(() => {
+            setSolicitantes((prev) =>
+                prev.filter((solicitante) => solicitante.uid !== uidSolicitante)
+            );
+            localStorage.removeItem(`accepting-${uidSolicitante}`);
         });
-    }
+    });
+}
 
     useEffect(()=>{
         const query = new URLSearchParams(location.search);
@@ -226,10 +243,40 @@ function Amigos(){
     return  <>
       <main id="amigos-page" className="page">
             <div id="btns">
-                <div className="btn-type" onClick={()=>navigate("/amigos?page=0")}>amigos</div>
-                <div className="btn-type" onClick={()=>navigate("/amigos?page=1")}>pedidos</div>
-                <div className="btn-type" onClick={()=>navigate("/amigos?page=2")}>pesquisar</div>
+                <div
+                    className="btn-type"
+                    onClick={() => navigate("/amigos?page=0")}
+                    style={{
+                        color: currentPage === 0 ? "#000" : "#777",
+                        borderBottom: currentPage === 0 ? "3px solid green" : "none"
+                    }}
+                >
+                    Amigos
+                </div>
+                <div
+                    className="btn-type"
+                    onClick={() => navigate("/amigos?page=1")}
+                    style={{
+                        color: currentPage === 1 ? "#000" : "#777",
+                        borderBottom: currentPage === 1 ? "3px solid green" : "none"
+                    }}
+                >
+                    Pedidos
+                </div>
+                <div
+                    className="btn-type"
+                    onClick={() => navigate("/amigos?page=2")}
+                    style={{
+                        color: currentPage === 2 ? "#000" : "#777",
+                        borderBottom: currentPage === 2 ? "3px solid green" : "none"
+                    }}
+                >
+                    Pesquisar
+                </div>
             </div>
+
+
+
             <div id="amigos-division"></div>
             <div id="mainlists">
                 <section id="lista-amigos" style={{ display: currentPage === 0 ? "block" : "none" }}>
@@ -260,8 +307,25 @@ function Amigos(){
                         return <div className="friend-item" style={{ display: "flex", alignItems: "center", marginBottom: "10px "}} key={index}>
                             <img src={friend.fotoPerfil} alt={"Foto de " + friend.nome} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
                             <strong>{friend.nome}</strong>
-                            <button id="aceitar-pedido" onClick={()=>navigate(`/perfil?id=${friend.uid}`)}>aceitar</button>
-                            <button id="rejeitar-pedido" onClick={()=>removerAmigo(friend.id)}>recusar</button>
+                            <button
+                            id="aceitar-pedido"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                aceitarPedido(friend.uid);
+                            }}
+                        >
+                            Aceitar
+                        </button>
+                        <button
+                            id="rejeitar-pedido"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                rejeitarPedido(friend.id);
+                            }}
+                        >
+                            Recusar
+                        </button>
+
                         </div>
                     })}
                     </div>
@@ -276,12 +340,12 @@ function Amigos(){
                             </Link>
                             { aluno.mode == "friend" ? 
                                 <span>(Amigos)</span>
-                            : aluno.mode == "sended_request" ? 
-                                <button className="retirar" onClick={()=>{rejeitarPedido(aluno.uid); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "unsolicited" } : alunoValue))}}>cancelar</button>
+                            : aluno.mode == "sended_request" ?
+                                <button className="retirar" onClick={()=>{rejeitarPedido(aluno.uid); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "unsolicited" } : alunoValue))}}>Cancelar</button>
                             : aluno.mode == "received_request" ?
                                 <>
-                                    <button className="aceitar" onClick={()=>{aceitarPedido(aluno.id); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "friend" } : alunoValue))}}>aceitar</button>
-                                    <button className="rejeitar"onClick={()=>rejeitarPedido(aluno.id)}>rejeitar</button>
+                                    <button className="aceitar" onClick={()=>{aceitarPedido(aluno.id); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "friend" } : alunoValue))}}>Aceitar</button>
+                                    <button className="rejeitar"onClick={()=>rejeitarPedido(aluno.id)}>Rejeitar</button>
                                 </>
                             : <i className="fa-solid fa-user-plus" onClick={()=>{enviarPedido(aluno.id); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "sended_request" } : alunoValue))}}></i>
                             }

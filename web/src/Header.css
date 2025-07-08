@@ -50,24 +50,6 @@
 width: auto;
 } */
 
-#logoutBtn{
-    background-color: rgb(218, 76, 76);
-    
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    display: flex;
-    
-    text-align: center;
-    justify-content: center;
-    align-content: center;
-    align-items: center;
-}
-
-#logoutBtn:hover{
-  background-color: rgb(202, 0, 0);
-}
-
 #toggleSidebar{
     position: fixed;
     top: 10px;

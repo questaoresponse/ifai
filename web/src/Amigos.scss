@@ -33,16 +33,16 @@
     .btn-type{
         margin-top: 5px;
         width: fit-content;
-        height: fit-content;
+        height: -webkit-fill-available;
         padding-left: 5px;
         padding-right: 5px;
         padding-top: 5px;
         padding-bottom: 5px;
         margin-left: 10px;
-        background: gray;
-        border-radius: 5px;
+        background: transparent;
+        border-bottom: 3px solid green;
         font-size: 18px;
-        color: white;
+        color: #777;
         cursor: pointer;
         user-select: none;
     }

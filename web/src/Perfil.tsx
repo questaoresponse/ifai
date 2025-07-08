@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getDriveURL } from './Functions';
 import { getDatabase, ref as dbRef, update } from 'firebase/database';
 import Header from './Header';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useGlobal } from './Global';
 import "./Perfil.scss";
 import avatar_src from "./assets/static/avatar.png";
@@ -172,13 +172,18 @@ const Perfil = () => {
                 <div id="profile-content">
                     <div className="avatar-container">
                         <div className="avatar-wrapper">
-                            <img onClick={()=>refs.fileInput.current!.click()} src={avatarSrc} alt="Avatar do usuário" id="avatar" />
+                            <img 
+                                onClick={() => usuarioLogado && currentUser && usuarioLogado.uid === currentUser.uid && refs.fileInput.current!.click()} 
+                                src={avatarSrc} 
+                                alt="Avatar do usuário" 
+                                id="avatar" 
+                                style={{ cursor: usuarioLogado && currentUser && usuarioLogado.uid === currentUser.uid ? 'pointer' : 'default' }}
+                            />
+                            {usuarioLogado && currentUser && usuarioLogado.uid === currentUser.uid && (
                             <div className="edit-icon" id="editIcon" onClick={handleEditIconClick} style={{ cursor: 'pointer' }}>
-                                {/* Using a simple text/emoji for pencil, replace with FontAwesomeIcon if preferred */}
-                                {/* ✏️ */}
                                 <i className="fas fa-pencil-alt"></i>
-                                {/* Example with react-fontawesome: <FontAwesomeIcon icon={faPencilAlt} /> */}
                             </div>
+                        )}
 
                         </div>
                     </div>
@@ -187,11 +192,11 @@ const Perfil = () => {
                         <div id="n-divs">
                             <div id="n-friends">
                                 <div className='value'>{nFriends}</div>
-                                <div className='label'>amigos</div>
+                                <div className='label'>Amigos</div>
                             </div>
                             <div id="n-comunitys">
                                 <div className='value'>0</div>
-                                <div className='label'>comunidades</div>
+                                <div className='label'>Comunidades</div>
                             </div>
                         </div>
                     </div>
@@ -229,6 +234,9 @@ const Perfil = () => {
                     <i className="fa-solid fa-user"></i>
                     &nbsp;{cursos[currentUser ? currentUser.matricula.split("111")[1].split("0")[0] : "LOAD"]}
                 </div>
+                <Link to="/settings">
+                    <i id="btn-menu" className="fa-solid fa-ellipsis-vertical"></i>
+                </Link>
             </section>
             <Feed userPerfilUid={currentUser ? currentUser.uid : ""}></Feed>
         </main>

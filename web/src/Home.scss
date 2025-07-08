@@ -44,6 +44,14 @@
         height: 36px;
         font-size: 20px;
     }
+    #home-header{
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-bottom: 50px;
+        padding-bottom: 5px;
+        border-bottom: solid 1px gray;
+    }
 
     @media screen and (min-width: 769px){
         #comunity-list{

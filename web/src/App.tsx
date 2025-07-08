@@ -21,6 +21,8 @@ import Tools from './Tools';
 import logo_src from "./assets/static/ifai2.png";
 import Header from './Header';
 import AddPost from './AddPost';
+import Search from './Search';
+import Settings from './Settings';
 
 const Renderize = ({ Element } : { Element: any }) => {
     return <>
@@ -48,6 +50,7 @@ function App() {
                 <Router>
                 <Routes>
                     <Route path="/" element={<Renderize Element={Home}/>} />
+                    <Route path="/search" element={<Renderize Element={Search}/>} />
                     <Route path="/amigos" element={<Renderize Element={Amigos}/>} />
                     <Route path="/chats" element={<Renderize Element={Chats}/>} />
                     <Route path="/chat" element={<Renderize Element={Chats}/>} />
@@ -55,6 +58,7 @@ function App() {
                     <Route path="/login" element={<Renderize Element={Login}/>} />
                     <Route path="/registro" element={<Renderize Element={Registro}/>} />
                     <Route path="/perfil" element={<Renderize Element={Perfil}/>} />
+                    <Route path="/settings" element={<Renderize Element={Settings}/>} />
                     <Route path="/ferramentas" element={<Renderize Element={Tools}/>} />
                     <Route path="/flashcards" element={<Renderize Element={FlashCards}/>} />
                     <Route path="/add-posts" element={<Renderize Element={AddPost}/>} />
