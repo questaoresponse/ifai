@@ -327,8 +327,8 @@ function Chats(){
                     mensagemContainer.style.alignItems = "center";
                     mensagemContainer.style.margin = "10px 0";
             
-                    get(dbRef(getDatabase(), "usuarios/" + chatAtivo.current)).then((snap) => {
-                        const userAmigo = snap.val();
+                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", chatAtivo.current))).then(results=>{
+                        const userAmigo = results.docs[0].data();
                         let img = document.createElement("img");
                         img.src = userAmigo.fotoPerfil ?
                         userAmigo.fotoPerfil :
@@ -598,9 +598,9 @@ function Chats(){
                     div.style.backgroundColor = "gray";
                     div.style.color = "white";
                     div.style.marginRight = "auto";
-        
-                    get(dbRef(getDatabase(), "usuarios/" + chatAtivo.current)).then((snap) => {
-                        const userAmigo = snap.val();
+                    
+                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", chatAtivo.current))).then(results=>{
+                        const userAmigo = results.docs[0].data();
                         img.src = userAmigo.fotoPerfil ? userAmigo.fotoPerfil : "static/avatar.png";
                         const timeString = formatTime(date);
         

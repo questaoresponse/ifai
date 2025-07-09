@@ -3,6 +3,7 @@ import { useGlobal } from "./Global";
 import { getDriveURL } from "./Functions";
 import "./Feed.scss";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import avatar_src from "./assets/static/avatar.png";
 
 interface postsInterface{
     description: string
@@ -28,9 +29,9 @@ function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
                 const infos: { [key: string]: any } = {};
                 for (const result of userResults.docs){
                     const doc = result.data();
-                    infos[doc.uid] = { logo: doc.fotoPerfil, name: doc.nome  };
+                    infos[doc.uid] = { logo: doc.fotoPerfil? getDriveURL(doc.fotoPerfil) : avatar_src, name: doc.nome  };
                 }
-                setPosts(results.docs.map(doc=>{const data = doc.data(); return {...data, image: getDriveURL(data.image), logo: getDriveURL(infos[data.userUid].logo), user: infos[data.userUid].name }}) as postsInterface[]);
+                setPosts(results.docs.map(doc=>{const data = doc.data(); return {...data, image: getDriveURL(data.image), logo: infos[data.userUid].logo, user: infos[data.userUid].name }}) as postsInterface[]);
             });
         });
     },[usuarioLogado, userPerfilUid]);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { initializeFirebase, formatTime } from "./Functions";
-import {  getDatabase, ref as dbRef, set, get, onValue, remove, update, push, serverTimestamp, query, orderByChild } from "firebase/database"
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, uploadBytesResumable, deleteObject } from "firebase/storage";
+import {  getDatabase, ref as dbRef, set, get, onValue, remove, update, push, serverTimestamp, query as queryDb, orderByChild } from "firebase/database"
+import { getDownloadURL, deleteObject, getStorage, uploadBytes, uploadBytesResumable, ref as storageRef } from "firebase/storage";
 import type { FirebaseApp } from "firebase/app";
 import avatar_src from "./assets/static/avatar.png";
 import default_comunidade_src from './assets/static/default_comunidade.png'
@@ -10,6 +10,7 @@ import { useGlobal } from "./Global";
 import "./Comunidade.scss";
 import "./Conversations.scss";
 import Alert from "./Alert";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 interface membersInterface{
     fotoPerfil: string,
@@ -27,7 +28,7 @@ interface audioInterface{
 }
 
 function Comunidade(){
-    const { usuarioLogado } = useGlobal();
+    const { db, usuarioLogado } = useGlobal();
 
     const navigate = useNavigate();
 
@@ -122,25 +123,14 @@ function Comunidade(){
 
         const memberIds = Object.keys(comunidade.membros);
 
-        const memberPromises: any[] = [];
-
-        memberIds.forEach(memberId => {
-        const promise = get(dbRef(getDatabase(), 'usuarios/' + memberId)).then(userSnapshot => {
-            if (userSnapshot.exists()) {
+        getDocs(query(collection(db.current!, "usuarios"), where("uid", "in", memberIds))).then(results=>{
+            allMembers.current = results.docs.map(doc=>{
+                const data = doc.data();
                 return {
-                id: memberId,
-                ...userSnapshot.val()
-                };
-            }
-            return null;
-            });
-
-            memberPromises.push(promise);
-        });
-
-        Promise.all(memberPromises)
-        .then(members => {
-            allMembers.current = members.filter(member => member !== null);
+                    id: data.uid,
+                    ...data
+                    };
+            })
 
             allMembers.current.sort((a: any, b: any) => {
                 if (a.id === communityCreator) return -1;
@@ -888,7 +878,7 @@ function Comunidade(){
         const chatRef = dbRef(getDatabase(), `comunidades/${comunidadeId.current}/mensagens`);
         
           
-        const chatQuery = query(chatRef, orderByChild("timestamp"));
+        const chatQuery = queryDb(chatRef, orderByChild("timestamp"));
     
         onValue(chatQuery, (snapshot) => {
             chatMessagesContainer.innerHTML = '';
@@ -1296,8 +1286,8 @@ function Comunidade(){
                     div.style.color = '#333';
                     div.style.marginRight = 'auto';
                 
-                    get(dbRef(getDatabase(), 'usuarios/' + mensagem.remetente)).then(snap => {
-                        const userAmigo = snap.val() || { nome: 'Usuário' };
+                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", mensagem.remetente))).then(results=>{
+                        const userAmigo = results.docs.length > 0 ? results.docs[0].data() : { nome: 'Usuário' };
                         img.src = userAmigo.fotoPerfil ? userAmigo.fotoPerfil : avatar_src;
                         img.alt = userAmigo.nome || 'Usuário';
                 

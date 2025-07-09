@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {  getDatabase, ref as dbRef, get, remove, onValue, set } from "firebase/database"
+import { query, collection, updateDoc, where, getDocs, startAt,  endAt, orderBy } from "firebase/firestore";
+import { getDriveURL } from "./Functions";
 import avatar_src from "./assets/static/avatar.png";
 import { useGlobal } from "./Global";
 import "./Amigos.scss";
-import { query, collection, updateDoc, where, getDocs, startAt,  endAt, orderBy } from "firebase/firestore";
-import { getDriveURL } from "./Functions";
 
 declare global {
   interface Window {

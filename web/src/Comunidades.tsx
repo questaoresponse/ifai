@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import Alert from "./Alert";
 import { ref as storageRef, getDownloadURL, getStorage, uploadBytes } from "firebase/storage";
 import { getAuth } from "firebase/auth";
+import { Link } from "react-router-dom";
+import "./Comunidades.scss";
 import no_image_src from "./assets/static/avatar.png";
 import no_photo_comunity from "./assets/static/default_comunidade.png";
-import { Link } from "react-router-dom";
 
 const criarDropdownFiltro = (
   filtroOrdenacao: string,
@@ -506,7 +507,7 @@ function Comunidades(){
 
   const comunidadesExibir = mostrarTodas ? comunidades : comunidades.slice(0, 10);
 
-    return <div id="comunidades">
+    return <div id="comunitys">
         <div id="novacomunidade">
             { showForm ? <div id="containerFormComunidade">
                 <div id="formCriarComunidade" style={{ border: "1px solid #ccc", padding: "20px", marginTop: "10px", borderRadius: "5px" }}>

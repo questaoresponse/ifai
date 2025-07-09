@@ -1,49 +1,4 @@
 #home{
-    .banner{
-        object-fit: cover;
-        width: 90%;
-        aspect-ratio: 1;
-        margin-bottom: 10px;
-    }
-
-    #comunity-list{
-        display: flex;
-        border: 1px solid #ccc;
-        padding: 10px;
-        gap: 10px;
-        flex-direction: column;
-    }
-
-    .comunity-item{
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 100%; /* 4 colunas */
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-bottom: 10px;
-        border-radius: 5px;
-        max-width: 100%;
-        cursor: pointer;
-        text-decoration: none;
-        color: black;
-        align-items: center;
-    }
-
-    .photo{
-        width: 50%;
-        aspect-ratio: 1;
-        border-radius: 50%;
-        margin-bottom: 5px;
-    }
-
-    #btn-show-form-comunity{
-        position: relative;
-        top: 2px;
-        margin-left: 4px;
-        width: 36px;
-        height: 36px;
-        font-size: 20px;
-    }
     #home-header{
         display: flex;
         flex-direction: row;
@@ -51,15 +6,5 @@
         margin-bottom: 50px;
         padding-bottom: 5px;
         border-bottom: solid 1px gray;
-    }
-
-    @media screen and (min-width: 769px){
-        #comunity-list{
-            flex-direction: initial;
-        }
-        .comunity-item{
-            flex: 1 1 calc(25% - 10px); /* 4 colunas */
-            max-width: calc(25% - 10px);
-        }
     }
 }

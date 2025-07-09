@@ -141,7 +141,7 @@ const setUser = (user: any) => {
 }
 
 const getDriveURL = (file_id: string) => {
-  return `https://lh3.google.com/u/0/d/${file_id}=w700-h607-iv1?auditContext=forDisplay`;
+  return `https://www.googleapis.com/drive/v3/files/${file_id}/export`;
 }
 
 export {

@@ -70,6 +70,10 @@
         flex-direction: row;
         gap: 10px;
     }
+    .alunotag{
+        background: cornflowerblue !important;
+        color: white !important;
+    }
     .aluno-tag {
         display: block;
         background-color: #e0e0e0;
@@ -81,6 +85,11 @@
         position: relative;
         margin-left: auto;
         margin-right: auto;
+        width: max-content;
+    }
+    .user-type-indicator {
+        display: inline-flex;
+        gap: 5px;
     }
     #btn-menu{
         position: absolute;

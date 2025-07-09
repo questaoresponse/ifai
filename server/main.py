@@ -7,6 +7,7 @@ from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFi
 import os
 import time
 import requests
+import asyncio
 # import smtplib
 # import dns.resolver
 
@@ -177,11 +178,6 @@ def perfil():
         timestamp = request.form.get("timestamp")
         filename = request.files["file"].filename
         return receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}"), 200
-    
-async def loop():
-    while True:
-        time.sleep(10)
-        requests.get("https://ifai-phwn.onrender.com")
 
 # email = "catce.2025111ISINF0063@aluno.ifpi.edu.br"
 # url = "https://api.emailawesome.com/api/validations/email_validation"
@@ -251,6 +247,28 @@ def assets_files(filename):
 def static_files(filename):
     return send_from_directory("public/static", filename)
 
-if __name__ == "__main__":
-    loop()
+@app.route('/imagem/<file_id>')
+def baixar_imagem(file_id):
+    request = service.files().get_media(fileId=file_id)
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+    fh.seek(0)
+    return send_file(fh, mimetype='image/jpeg')
+
+async def loop():
+    while True:
+        asyncio.sleep(10)
+        try:
+            requests.get("https://ifai-phwn.onrender.com")
+        except Exception as e:
+            pass
+
+async def main():
+    asyncio.create_task(loop())
     app.run("0.0.0.0", 5170)
+
+if __name__ == "__main__":
+    asyncio.run(main())

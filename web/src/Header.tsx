@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { atualizarNotificacoesChat } from "./Functions";
-import { getAuth } from "firebase/auth";
 import "./Header.css";
 import { useGlobal } from "./Global";
 import { ref as dbRef, get, getDatabase, onValue, remove, set } from "firebase/database";
@@ -15,7 +14,7 @@ interface friendsInterface{
 }
 
 function Header(){
-    const { refs, mobile, usuarioLogado, setNavigate, logout } = useGlobal();
+    const { refs, mobile, usuarioLogado, setNavigate } = useGlobal();
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -37,47 +36,47 @@ function Header(){
         });
     }
 
-    const buscarAlunos = () => {
-        if (!usuarioLogado) {
-            navigate("/login");
-            return;
-        }
+    // const buscarAlunos = () => {
+    //     if (!usuarioLogado) {
+    //         navigate("/login");
+    //         return;
+    //     }
     
-        const termo = (document.getElementById("searchInput")! as any).value.toLowerCase().trim();
+    //     const termo = (document.getElementById("searchInput")! as any).value.toLowerCase().trim();
     
-        if (termo === "") {
-            setAlunos(null);
-            return;
-        }
+    //     if (termo === "") {
+    //         setAlunos(null);
+    //         return;
+    //     }
     
-        get(dbRef(getDatabase(), "usuarios")).then(async (snapshot) => {
-            var snapshotValue: {[key: string]: any} = snapshot.val() || {};
+    //     get(dbRef(getDatabase(), "usuarios")).then(async (snapshot) => {
+    //         var snapshotValue: {[key: string]: any} = snapshot.val() || {};
 
-            const alunos: any[] = [];
-            for (const uid in snapshotValue){
-                const user = snapshotValue[uid];
-                var mode = "";
+    //         const alunos: any[] = [];
+    //         for (const uid in snapshotValue){
+    //             const user = snapshotValue[uid];
+    //             var mode = "";
         
-                if ( uid !== usuarioLogado!.uid && user.nome.toLowerCase().includes(termo) ) {
-                    const friendSnapshot = await get(dbRef(getDatabase(), `friends/${usuarioLogado!.uid}/${uid}`));
-                    if (friendSnapshot.exists()) {
-                            mode = "friend";
-                    } else {
-                        const requestSnapshot = await get(dbRef(getDatabase(), `friendRequests/${uid}/${usuarioLogado!.uid}`));
-                        if (requestSnapshot.exists()) {
-                            mode = "sended_request";
-                        } else {
-                            const receivedRequestSnapshot = await get(dbRef(getDatabase(), `friendRequests/${usuarioLogado!.uid}/${uid}`));
-                            mode = receivedRequestSnapshot.exists() ? "received_request" : "unsolicited";
-                        }
-                    }
-                    alunos.push({ fotoPerfil: user.fotoPerfil ? user.fotoPerfil : avatar_src, nome: user.nome, mode, id: uid });
-                }
-            }
-            setAlunos(alunos);
-            // "Nenhum aluno encontrado."
-        });
-    }
+    //             if ( uid !== usuarioLogado!.uid && user.nome.toLowerCase().includes(termo) ) {
+    //                 const friendSnapshot = await get(dbRef(getDatabase(), `friends/${usuarioLogado!.uid}/${uid}`));
+    //                 if (friendSnapshot.exists()) {
+    //                         mode = "friend";
+    //                 } else {
+    //                     const requestSnapshot = await get(dbRef(getDatabase(), `friendRequests/${uid}/${usuarioLogado!.uid}`));
+    //                     if (requestSnapshot.exists()) {
+    //                         mode = "sended_request";
+    //                     } else {
+    //                         const receivedRequestSnapshot = await get(dbRef(getDatabase(), `friendRequests/${usuarioLogado!.uid}/${uid}`));
+    //                         mode = receivedRequestSnapshot.exists() ? "received_request" : "unsolicited";
+    //                     }
+    //                 }
+    //                 alunos.push({ fotoPerfil: user.fotoPerfil ? user.fotoPerfil : avatar_src, nome: user.nome, mode, id: uid });
+    //             }
+    //         }
+    //         setAlunos(alunos);
+    //         // "Nenhum aluno encontrado."
+    //     });
+    // }
 
     function rejeitarPedido(uidSolicitante: any) {
         if (!usuarioLogado) return;
@@ -269,12 +268,12 @@ function Header(){
     return usuarioLogado ? <>
         <aside id="sidebar" className="collapsed">
             <div id="sidebar-content" style={{ overflowY: "auto", flexGrow: 1 }}>
-            <div id="buscar" style={{ display: "none" }}>
+            {/* <div id="buscar" style={{ display: "none" }}>
                 <input type="text" id="searchInput" placeholder="Pesquisar aluno"/>
                 <button onClick={buscarAlunos}>
                 <i className="fa-solid fa-magnifying-glass" aria-hidden="true" style={{ color: "#9ecc9e" }}></i>
                 </button>
-            </div>
+            </div> */}
             <br />
             <div id="searchResults">{alunos ? alunos.length == 0 ? <div>Nenhum usuário encontrado.</div> : alunos.map((aluno, index: number)=>{
                 return <div className="friends-item" key={index}>

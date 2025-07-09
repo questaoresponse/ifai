@@ -2,18 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { getDriveURL } from './Functions';
 import { getDatabase, ref as dbRef, update } from 'firebase/database';
 import Header from './Header';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useGlobal } from './Global';
 import "./Perfil.scss";
 import avatar_src from "./assets/static/avatar.png";
 import auth from './Auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import Feed from './Feed';
-
-// Assuming Font Awesome is globally available or imported elsewhere
-// For example, if using react-fontawesome:
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faPencilAlt, faUser } from '@fortawesome/free-solid-svg-icons';
 
 const cursos: { [key: string]: any } = {
     ISINF: "Integrado em Informática",
@@ -34,20 +29,18 @@ interface Perfil {
     nome: string,
     password: string,
     timestamp: number,
-    uid: string
+    uid: string,
+    fotoPerfil: string
+    tipoUsuario: 'aluno' | 'professor'  
 }
 
 const Perfil = () => {
     const { db, server, usuarioLogado } = useGlobal();
-
-    // State for dynamic content, mimicking the 'Carregando...' placeholders
     const [displayName, setDisplayName] = useState<string>('Carregando...');
     const [nFriends, setNFriends] = useState(0);
-    const [avatarSrc, setAvatarSrc] = useState<string>(avatar_src); // Default avatar
+    const [avatarSrc, setAvatarSrc] = useState<string>(avatar_src);
     const [showRemovePhotoButton, setShowRemovePhotoButton] = useState<boolean>(false);
     const [currentUser, setCurrentUser] = useState<Perfil | null>(null);
-
-    const navigate = useNavigate();
 
     const refs = {
         avatar: useRef<HTMLImageElement>(null),
@@ -75,7 +68,6 @@ const Perfil = () => {
 
     useEffect(()=>{
         if (usuarioLogado){
-
             function getQueryParam(param: any) {
                 const urlParams = new URLSearchParams(window.location.search);
                 return urlParams.get(param);
@@ -84,10 +76,10 @@ const Perfil = () => {
             function carregarPerfil(uid: string) {
                 getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uid))).then(results=>{
                     if (results.size > 0){
-                        const userData = results.docs[0].data();
+                        const userData = results.docs[0].data() as Perfil;
                         setDisplayName(userData.nome || "Usuário");
                         setNFriends(userData.nFriends);
-                        setCurrentUser({ ...userData as any, uid });
+                        setCurrentUser({ ...userData, uid });
 
                         if (userData.fotoPerfil) {
                             setAvatarSrc(getDriveURL(userData.fotoPerfil));
@@ -129,12 +121,9 @@ const Perfil = () => {
             } else {
                 carregarPerfil(usuarioLogado.uid);
             }
-        } else {
-            navigate("/login");
         }
     }, [usuarioLogado]);
 
-    // Event handler for clicking the edit icon (to change avatar)
     const handleEditIconClick = (): void => {
         const fileInput = document.getElementById('fileInput') as HTMLInputElement;
         if (fileInput) {
@@ -155,7 +144,6 @@ const Perfil = () => {
         }
     };
 
-    // Event handler for removing the photo
     const handleRemovePhotoClick = (event: any): void => {
         event.preventDefault(); // Prevent any default button action
         setAvatarSrc(avatar_src); // Reset to default avatar
@@ -180,11 +168,24 @@ const Perfil = () => {
                                 style={{ cursor: usuarioLogado && currentUser && usuarioLogado.uid === currentUser.uid ? 'pointer' : 'default' }}
                             />
                             {usuarioLogado && currentUser && usuarioLogado.uid === currentUser.uid && (
-                            <div className="edit-icon" id="editIcon" onClick={handleEditIconClick} style={{ cursor: 'pointer' }}>
-                                <i className="fas fa-pencil-alt"></i>
+                                <div className="edit-icon" id="editIcon" onClick={handleEditIconClick} style={{ cursor: 'pointer' }}>
+                                    <i className="fas fa-pencil-alt"></i>
+                                </div>
+                            )}
+                            <div className="user-type-indicator">
+                                {currentUser && (
+                                    <>
+                                        <div className="aluno-tag alunotag">
+                                            <i className="fa-solid fa-user-graduate"></i>
+                                            &nbsp;Aluno
+                                        </div>
+                                        <div className="aluno-tag">
+                                            <i className="fa-solid fa-user"></i>
+                                            &nbsp;{cursos[currentUser.matricula.split("111")[1].split("0")[0]]}
+                                        </div>
+                                    </>
+                                )}
                             </div>
-                        )}
-
                         </div>
                     </div>
                     <div id="profile-info">
@@ -227,13 +228,7 @@ const Perfil = () => {
                     accept="image/*"
                     onChange={handleFileChange}
                 />
-                <div>
-                </div>
                 <br />
-                <div className="aluno-tag">
-                    <i className="fa-solid fa-user"></i>
-                    &nbsp;{cursos[currentUser ? currentUser.matricula.split("111")[1].split("0")[0] : "LOAD"]}
-                </div>
                 <Link to="/settings">
                     <i id="btn-menu" className="fa-solid fa-ellipsis-vertical"></i>
                 </Link>
