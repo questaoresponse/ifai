@@ -8,6 +8,7 @@ import os
 import time
 import requests
 import asyncio
+from threading import Thread
 # import smtplib
 # import dns.resolver
 
@@ -260,15 +261,26 @@ def baixar_imagem(file_id):
 
 async def loop():
     while True:
-        asyncio.sleep(10)
+        await asyncio.sleep(10)
         try:
             requests.get("https://ifai-phwn.onrender.com")
         except Exception as e:
             pass
 
+def run_flask():
+    app.run("0.0.0.0", port=12345)
+    
 async def main():
     asyncio.create_task(loop())
-    app.run("0.0.0.0", 5170)
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
+    try:
+        await loop()
+    except asyncio.CancelledError:
+        os._exit(0)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        os._exit(0)

@@ -328,6 +328,7 @@ function Header(){
                 <Link to="/perfil"className={"defbtn" + (location.pathname === "/perfil" ? " selected" : "")}>
                     <i className="fas fa-user" aria-hidden="true"></i>
                 </Link>
+                
                 <Link to="/ferramentas" className={"defbtn" + (["/ferramentas", "/flashcards", "/add-posts"].includes(location.pathname) ? " selected" : "")}>
                     <i className="fa-solid fa-plus"></i>
                 </Link>
