@@ -75,7 +75,7 @@ function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
                     const doc = result.data();
                     infos[doc.uid] = { logo: doc.fotoPerfil? getDriveURL(doc.fotoPerfil) : avatar_src, name: doc.nome  };
                 }
-                setPosts(results.docs.map(doc=>{const data = doc.data(); console.log(data.timestamp); return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: infos[data.userUid].logo, user: infos[data.userUid].name }}) as postsInterface[]);
+                setPosts(results.docs.map(doc=>{const data = doc.data(); return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: infos[data.userUid].logo, user: infos[data.userUid].name }}) as postsInterface[]);
             });
         });
     },[usuarioLogado, userPerfilUid]);

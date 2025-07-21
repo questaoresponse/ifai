@@ -135,15 +135,27 @@ function formatTimestamp(date: Date) {
     "Novembro",
     "Dezembro"
   ]
+  
+  const days = [
+    "Segunda",
+    "Terça",
+    "Quarta",
+    "Quinta",
+    "Sexta",
+    "Sábado",
+    "Domingo",
+  ];
 
   if (diff < oneMinute) {
     return "Agora";
   } else if (diff < oneDay && date.getDate() === now.getDate()) {
-    return `Hoje às ${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}`;
+    return `Hoje`;
   } else if (diff < oneDay * 2 && date.getDate() === now.getDate() - 1) {
-    return `Ontem às ${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}`;
+    return `Ontem`;
+  } else if (diff < 7 * 24 * 60 * 60 * 1000) {
+    return days[date.getDay()];
   } else {
-    return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()} às ${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}`;
+    return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
   }
 }
 
