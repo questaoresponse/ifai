@@ -1,0 +1,104 @@
+#chats-page{
+    #history {
+        max-height: 65vh;
+        width: 33%;
+        border-radius: 15px;
+    }
+    
+    section {
+        background-color: white;
+        padding: 1rem;
+    }
+
+    #top-chats{
+        width: 100%;
+        border-bottom: 1px solid #d0d0d0;
+        margin-bottom: 15px;
+    }
+
+    #label-chats{
+        display: inline-flex;
+        color: #1e3231;
+        padding-bottom: 10px;
+    }
+
+    .time-div{
+        text-align: center;
+        color: gray;
+        font-weight: 700;
+    }
+
+    @media screen and (max-width: 768px) {
+
+        .chatdiv {
+            flex-direction: column;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            align-items: flex-end;
+        }
+
+        #history, #chat {
+            width: 100%;
+            height: 100%;
+            max-width: -webkit-fill-available; 
+            margin-left: inherit;
+            max-height: initial;
+        }
+
+        #chat-box {
+            padding: 0.5rem;
+            width: 100%;
+            height: calc(100% - 20px);
+        }
+
+        #chat-messages {
+            height: calc(100% - 82px);
+        }
+
+        #chat-input {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            padding: 8px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            width: 100%;
+            height: 74px;
+        }
+        
+        #chat-input textarea {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 25px;
+        }
+        
+        #chat-input button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: #248232;
+            margin-left: 10px;
+        }
+        
+        #chat-input button:hover {
+            color: #1b5c24;
+        }
+    }
+    .friend-item{
+        display: flex;
+        flex-direction: row;
+        cursor: pointer;
+    }
+
+    @media screen and (min-width: 769px){
+        padding: 20px;
+    }
+}

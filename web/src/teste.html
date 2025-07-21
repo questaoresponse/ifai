@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards Interativos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .flashcard-container {
+            perspective: 1000px;
+        }
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; /* p-6 */
+        }
+        .card-front {
+            background-color: #ffffff; /* bg-white */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-lg */
+        }
+        .card-back {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-lg */
+            transform: rotateY(180deg);
+        }
+        /* Estilo para o modal de mensagem */
+        .message-modal {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            /* Cor de fundo atualizada para o verde especificado */
+            background-color: #347b3e; 
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, top 0.5s ease-in-out;
+            font-size: 1rem;
+        }
+        .message-modal.show {
+            opacity: 1;
+            top: 50px;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#2a6031] to-slate-800 min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- O ID do modal de mensagem está correto -->
+    <div id="messageModal" class="message-modal">Mensagem aqui!</div>
+
+    <div class="w-full max-w-2xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-white">Flashcards Interativos</h1>
+            <!-- Cor do subtítulo atualizada -->
+            <p class="text-green-300 mt-2">Teste seus conhecimentos!</p>
+        </header>
+
+        <div class="flashcard-container h-80 md:h-96">
+            <div id="flashcard" class="flashcard">
+                <!-- Face da Pergunta -->
+                <!-- Cor da borda atualizada -->
+                <div class="card-face card-front border-2 border-[#347b3e]">
+                    <h2 id="cardQuestion" class="text-3xl md:text-4xl font-semibold text-slate-800 text-center">Constituição</h2>
+                </div>
+                <!-- Face da Resposta -->
+                <!-- Cor da borda atualizada -->
+                <div class="card-face card-back border-2 border-[#347b3e]">
+                    <p id="cardAnswer" class="text-xl md:text-2xl text-slate-700 text-center">A resposta para a pergunta sobre a Constituição estará aqui.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <!-- Botão Anterior atualizado -->
+            <button id="prevButton" class="w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                Anterior
+            </button>
+            <!-- Botão Virar/Mostrar Resposta atualizado para o verde principal -->
+            <button id="flipButton" class="w-full sm:w-auto bg-[#347b3e] hover:bg-[#2a6031] text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-[#499c54]">
+                Mostrar Resposta
+            </button>
+            <!-- Botão Próximo atualizado -->
+            <button id="nextButton" class="w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-green-500">
+                Próximo
+            </button>
+        </div>
+
+         <div class="mt-12 text-center">
+            <!-- Cor do número do card atualizada -->
+            <p id="cardNumber" class="text-sm text-green-300">Card 1 de 10</p>
+         </div>
+    </div>
+
+    <script>
+        // Dados de exemplo para os flashcards (mantidos)
+        const flashcardsData = [
+            { question: "O que é a Constituição Federal?", answer: "É a lei máxima de um país, que organiza o Estado, define direitos e deveres dos cidadãos e estabelece os limites do poder." },
+            { question: "Qual o primeiro artigo da Constituição Federal de 1988?", answer: "Art. 1º A República Federativa do Brasil, formada pela união indissolúvel dos Estados e Municípios e do Distrito Federal, constitui-se em Estado Democrático de Direito..." },
+            { question: "Quais são os três poderes da União?", answer: "Legislativo, Executivo e Judiciário, independentes e harmônicos entre si." },
+            { question: "O que é um Habeas Corpus?", answer: "É uma garantia constitucional concedida sempre que alguém sofrer ou se achar ameaçado de sofrer violência ou coação em sua liberdade de locomoção, por ilegalidade ou abuso de poder." },
+            { question: "Quantos artigos possui a Constituição de 1988?", answer: "A Constituição Federal de 1988 possui 250 artigos em seu corpo principal, além do Ato das Disposições Constitucionais Transitórias (ADCT)." }
+        ];
+
+        let currentCardIndex = 0;
+        let isFlipped = false;
+
+        const flashcardElement = document.getElementById('flashcard');
+        const questionElement = document.getElementById('cardQuestion');
+        const answerElement = document.getElementById('cardAnswer');
+        const flipButton = document.getElementById('flipButton');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const cardNumberElement = document.getElementById('cardNumber');
+        const messageModalElement = document.getElementById('messageModal'); // Corrigido para corresponder ao ID
+
+        function showMessage(message, duration = 3000) {
+            messageModalElement.textContent = message; // Corrigido
+            messageModalElement.classList.add('show'); // Corrigido
+            setTimeout(() => {
+                messageModalElement.classList.remove('show'); // Corrigido
+            }, duration);
+        }
+
+        function updateCardContent() {
+            const currentCard = flashcardsData[currentCardIndex];
+            questionElement.textContent = currentCard.question;
+            answerElement.textContent = currentCard.answer;
+            cardNumberElement.textContent = `Card ${currentCardIndex + 1} de ${flashcardsData.length}`;
+            
+            if (isFlipped) {
+                flashcardElement.classList.remove('is-flipped');
+                isFlipped = false;
+                flipButton.textContent = 'Mostrar Resposta';
+            }
+            updateNavigationButtons();
+        }
+
+        function updateNavigationButtons() {
+            prevButton.disabled = currentCardIndex === 0;
+            nextButton.disabled = currentCardIndex === flashcardsData.length - 1;
+        }
+
+        flipButton.addEventListener('click', () => {
+            isFlipped = !isFlipped;
+            flashcardElement.classList.toggle('is-flipped');
+            if (isFlipped) {
+                flipButton.textContent = 'Mostrar Pergunta';
+            } else {
+                flipButton.textContent = 'Mostrar Resposta';
+            }
+        });
+
+        prevButton.addEventListener('click', () => {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                updateCardContent();
+            } else {
+                showMessage("Este é o primeiro card.");
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentCardIndex < flashcardsData.length - 1) {
+                currentCardIndex++;
+                updateCardContent();
+            } else {
+                showMessage("Você chegou ao último card!");
+            }
+        });
+        
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') {
+                if(!prevButton.disabled) prevButton.click();
+            } else if (event.key === 'ArrowRight') {
+                if(!nextButton.disabled) nextButton.click();
+            } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === ' ') {
+                event.preventDefault(); 
+                flipButton.click();
+            }
+        });
+
+        updateCardContent();
+    </script>
+
+</body>
+</html>

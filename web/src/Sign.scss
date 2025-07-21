@@ -1,0 +1,70 @@
+#signin, #signup{
+    #sign-container{
+        padding: 2rem;
+        display: flex;
+        width: 100%;
+        height: fit-content;
+        position: relative;
+        flex-direction: column;
+        margin-top: auto;
+        margin-bottom: auto;
+        box-shadow: none;
+    }
+    #logo{
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 20px;
+    }
+    .input-group{
+        margin-bottom: 10px;
+    }
+    #btn-submit{
+        position: relative;
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        
+        font-size: 17px;
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        height: max-content;
+        margin-top: 50px;
+    }
+
+    @media screen and (min-width: 769px) {
+        #sign-container{
+            width: 400px;
+            height: 60%;
+            margin-left: calc(50% - 275px);
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            box-shadow: 2px 1px 5px gray;
+            padding-bottom: 10px;
+        }
+        #btn-submit{
+            width: fit-content;
+            margin-top: auto;
+        }
+    }
+}
+#signup{
+    @media screen and (min-width: 769px) {
+        #sign-container{
+            height: 87.5%;
+        }
+    }
+
+}
+#signup.page, #signin.page{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+}
+@media screen and (min-width: 769px) {
+    #signup.page, #signin.page{
+        background-color: initial;
+    }
+}

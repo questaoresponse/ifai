@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="firebase.mjs" type="module"></script>
+</head>
+<style>
+  .header_logo{
+    margin-left: 40px;
+  }
+</style>
+<body>
+  <br>
+  <div class="header_logo">
+      <img src="static/ifai2.png" width="150px">
+      <div class="vl"></div>
+      <h1>Registro</h1>
+  </div>
+  <br>
+  <main>
+    <form id="registerForm">
+      <label for="regNome">Nome:</label>
+      <input type="text" id="regNome" required>
+
+      <label for="regEmail">Email:</label>
+      <input type="email" id="regEmail" required>
+
+      <label for="regSenha">Senha:</label>
+      <input type="password" id="regSenha" required>
+
+      <button type="submit">Registrar</button>
+    </form>
+    <p>Já possui conta? <a href="login.html">Faça login</a></p>
+  </main>
+
+  <script src="registro.mjs" type="module"></script>
+</body>
+</html>

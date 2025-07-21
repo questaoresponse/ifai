@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IFaí</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="static/logo_svg.svg" type="image/svg" />
+    <script src="firebase.mjs" type="module"></script>
+  </head>
+  <body>
+    <script
+      src="https://kit.fontawesome.com/9807db5824.js"
+      crossorigin="anonymous"
+    ></script>
+    <main>
+      <br />
+
+      <h4 class="hidden" id="resultadoPA"></h4>
+
+      <br />
+      <div class="header_logo">
+        <img src="static/ifai2.png" width="150px" />
+        <div class="vl"></div>
+        <h1>Início</h1>
+      </div>
+
+      <br /><br />
+      <h3>Comunidades</h3>
+      <div id="novacomunidade">
+        <button onclick="mostrarFormularioCriarComunidade()">
+          <i class="fa-solid fa-plus"></i>&nbsp;Criar Comunidade
+        </button>
+      </div>
+      <section id="comunidades">
+        <div
+          id="listaComunidades"
+          style="display: flex; flex-wrap: wrap; gap: 20px"
+        ></div>
+      </section>
+    </main>
+    <script src="index.mjs" type="module"></script>
+    <script src="script.mjs" type="module"></script>
+    <script src="header.mjs" type="module"></script>
+    <script>
+      
+    </script>
+  </body>
+</html>

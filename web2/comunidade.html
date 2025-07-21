@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comunidade</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://kit.fontawesome.com/9807db5824.js" crossorigin="anonymous"></script>
+
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="firebase.mjs" type="module"></script>
+  <script src="header.mjs" type="module"></script>
+  <script src="script.mjs" type="module"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+
+    header {
+      background: #1E3231;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .comunidade-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .comunidade-info img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+
+    .comunidade-info h2 {
+      margin: 10px 0;
+    }
+
+    .comunidade-info p {
+      text-align: center;
+    }
+
+    #chat-container {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 10px;
+      margin-top: 20px;
+    }
+
+    #chat-messages {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+
+    .message {
+      margin-bottom: 10px;
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .message .sender {
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .message .text {
+      margin-left: 10px;
+    }
+
+    .message .time {
+      font-size: 12px;
+      text-align: right;
+      color: #666;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: transparent;
+    }
+
+    .community-container {
+      display: flex;
+      gap: 20px;
+    }
+
+    .community-left {
+      flex: 3;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      border-radius: 5px;
+      border-top-right-radius: 30px;
+      border-top-left-radius: 30px;
+    }
+
+    .community-right {
+      flex: 1;
+      min-width: 250px;
+    }
+  </style>
+</head>
+
+<body>
+
+
+
+  <div id="bannerOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); display: none; justify-content: center; align-items: center; color: white; font-size: 18px;">
+    Clique para editar o banner
+  </div>
+  </div>
+  <main>
+    <div class="community-container">
+      <div class="community-left">
+        <div class="comunidade-info">
+          <div id="communityBanner" style="width: 100%; height: 200px; background-color: #f0f0f0; background-size: cover; background-position: center; cursor: pointer;     border-top-right-radius: 30px; border-top-left-radius: 30px;"></div>
+          <img id="comunidadeImagem" src="static/default_comunidade.png" alt="Imagem da comunidade">
+          <h2 id="comunidadeTitulo">Nome da Comunidade</h2>
+          <p id="comunidadeDescricao">Descrição da comunidade</p>
+          <p id="comunidadeTags">Tags: <span></span></p>
+        </div>
+
+        <div id="botao-entrar-container" style="text-align: center; margin: 15px 0; display: none;">
+          <button id="botao-entrar" style="padding: 10px 20px; font-size: 16px; background: #248232; color: #fff; border: none; border-radius: 5px; cursor: pointer;">
+            Entrar na Comunidade
+          </button>
+        </div>
+
+        <script>
+                  </script>
+        <div id="chat-container">
+          <h3>Chat da Comunidade</h3>
+          <div id="chat-messages"></div>
+          <div id="chat-input">
+            <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,image/*,video/*" style="display:none;" onchange="handleFileUpload(event)" />
+            <button onclick="document.getElementById('fileUpload').click()">
+              <i class="fa-solid fa-file-upload" aria-hidden="true"></i>
+            </button>
+            <textarea type="text" id="messageInput" placeholder="Digite sua mensagem..."></textarea>
+            <button onclick="enviarMensagem()">
+              <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="community-right">
+        <div class="members-container">
+          <div class="members-header">
+            <h3>Membros <span id="membersCount">(0)</span></h3>
+            <div class="search-box">
+              <input type="text" id="memberSearch" placeholder="Buscar membro...">
+              <button id="searchButton"><i class="fas fa-search"></i></button>
+            </div>
+          </div>
+          <div id="membersList"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="comunidade.mjs" type="module"></script>
+
+  <div id="bannerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000;">
+    <div style="background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px;">
+      <h3>Editar Banner da Comunidade</h3>
+      <input type="file" id="bannerFileInput" accept="image/*" style="margin: 10px 0;">
+      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <button onclick="fecharModalBanner()" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">Cancelar</button>
+        <button onclick="salvarBanner()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Salvar</button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
