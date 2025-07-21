@@ -1,4 +1,5 @@
-from googleapiclient.discovery import build, HttpRequest
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -11,7 +12,7 @@ def load_creds():
         if creds and creds.valid:
             return creds
         elif creds and creds.expired and creds.refresh_token:
-            creds.refresh(HttpRequest())
+            creds.refresh(Request())
             return creds
 
 def get_drive_service():
