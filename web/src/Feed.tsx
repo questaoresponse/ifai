@@ -52,7 +52,7 @@ function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
             return `Há ${String(number)} minuto${getPlural(number)}`;
         } else if (diff < 24 * 60 * 60 * 1000){
             const number = Math.floor(diff / (60 * 60 * 1000));
-            return `Há ${String()} hora${getPlural(number)}`;
+            return `Há ${String(number)} hora${getPlural(number)}`;
         } else if (diff < 7 * 24 * 60 * 60 * 1000){
             const number = Math.floor(diff / (24 * 60 * 60 * 1000));
             return `Há ${String(number)} dia${getPlural(number)}`;
