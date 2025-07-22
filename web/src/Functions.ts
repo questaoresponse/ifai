@@ -1,6 +1,7 @@
 import { type User } from "firebase/auth";
 import {  getDatabase, ref as dbRef, get, onValue, update, } from "firebase/database"
 import { initializeApp } from "firebase/app"
+import { type Messaging, getMessaging, getToken, onMessage } from "firebase/messaging";
 // import { getAnalytics } from "firebase/analytics";
 import { Firestore, getFirestore } from "firebase/firestore";
 
@@ -46,6 +47,7 @@ const firebaseConfig = {
 const functions: any[] = [];
 let firebase: any = null;
 let db: Firestore | null = null;
+let messaging: Messaging | null = null;
 // Initialize Firebase
 const initializeFirebase = (fn: any) => {
     if(firebase){
@@ -57,6 +59,7 @@ const initializeFirebase = (fn: any) => {
 (async ()=>{
     firebase = await initializeApp(firebaseConfig);
     db = getFirestore();
+    messaging = getMessaging();
     // const analytics = getAnalytics(firebase);
     for (const fn of functions){
         fn(db);
@@ -173,6 +176,9 @@ const getDriveURL = (file_id: string) => {
 }
 
 export {
+    messaging,
+    getToken,
+    onMessage,
     atualizarNotificacoesChat,
     initializeFirebase,
     marcarMensagensComoLidas,

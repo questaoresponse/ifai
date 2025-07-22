@@ -9,6 +9,7 @@ import "./Conversations.scss";
 import { useNavigate } from "react-router-dom";
 import Alert from "./Alert";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import auth from "./Auth";
 
 interface audioInterface{
     audioSeconds: number,
@@ -17,12 +18,18 @@ interface audioInterface{
     audioChunks: any[]
 }
 
+interface chatUser{
+    nome: string,
+    uid: string
+}
+
 function Chats(){
-    const { db, mobile, usuarioLogado, refs: { respa } } = useGlobal();
+    const { server, db, mobile, usuarioLogado, refs: { respa } } = useGlobal();
 
     const navigate = useNavigate();
 
-    const chatAtivo = useRef<string>(null);
+    const otherUser = useRef<chatUser>(null);
+    const myUser = useRef<chatUser>(null);
     const modoSelecao = useRef<boolean>(false);
     const mensagensSelecionadas = useRef<any[]>([]);
     const chatId = useRef<string>("");
@@ -123,7 +130,7 @@ function Chats(){
     }
 
     const enviarMensagem = () => {
-        if (!usuarioLogado || !chatAtivo.current) return;
+        if (!usuarioLogado || !otherUser.current) return;
 
         const message = refs.messageInput.current!.value;
         if (message.trim() === "") {
@@ -132,14 +139,14 @@ function Chats(){
 
         if (refs.messageInput.current) {
             refs.messageInput.current.addEventListener("keydown", (event) => {
-                if (!chatAtivo.current) return;
+                if (!otherUser.current) return;
             
                 if (event.key === "Enter") {
                     if (event.shiftKey) {} else {
                     event.preventDefault();
                     }
                 }
-            
+           
                 set(dbRef(getDatabase(), `chats/${chatId.current}/typing/${usuarioLogado!.uid}`), true);
         
                 clearTimeout(window.typingTimeout);
@@ -149,11 +156,13 @@ function Chats(){
             });
         
             refs.messageInput.current.addEventListener("blur", () => {
-                if (!chatAtivo.current) return;
+                if (!otherUser.current) return;
         
                 set(dbRef(getDatabase(), `chats/${chatId.current}/typing/${usuarioLogado!.uid}`), false);
             });
         }
+
+        auth.post(server + "/message", { title: myUser.current!.nome, body: message, other_uid: otherUser.current.uid });
         
         const novaMensagem = {
             remetente: usuarioLogado!.uid,
@@ -240,7 +249,7 @@ function Chats(){
     }
     
     function excluirImagem(messageId: string, imageUrl: string) {
-      if (!usuarioLogado || !chatAtivo.current) return;
+      if (!usuarioLogado || !otherUser.current) return;
     
       if (confirm("Tem certeza que deseja excluir esta mensagem com imagem?")) {
         deleteObject(storageRef(getStorage(), imageUrl)).then(() => {
@@ -291,7 +300,7 @@ function Chats(){
     }
 
     function monitorarDigitacao() {
-        if (!usuarioLogado || !chatAtivo.current) return;
+        if (!usuarioLogado || !otherUser.current) return;
 
         const typingRef = dbRef(getDatabase(),`chats/${chatId.current}/typing`);
         
@@ -327,7 +336,7 @@ function Chats(){
                     mensagemContainer.style.alignItems = "center";
                     mensagemContainer.style.margin = "10px 0";
             
-                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", chatAtivo.current))).then(results=>{
+                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", otherUser.current!.uid))).then(results=>{
                         const userAmigo = results.docs[0].data();
                         let img = document.createElement("img");
                         img.src = userAmigo.fotoPerfil ?
@@ -357,7 +366,7 @@ function Chats(){
     }
 
     function carregarMensagens() {
-        if (!usuarioLogado || !chatAtivo.current) return;
+        if (!usuarioLogado || !otherUser.current) return;
         
         const chatMessagesContainer = document.getElementById("chat-messages");
         if (!chatMessagesContainer) {
@@ -598,7 +607,7 @@ function Chats(){
                     div.style.color = "white";
                     div.style.marginRight = "auto";
                     
-                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", chatAtivo.current))).then(results=>{
+                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", otherUser.current!.uid))).then(results=>{
                         const userAmigo = results.docs[0].data();
                         img.src = userAmigo.fotoPerfil ? getDriveURL(userAmigo.fotoPerfil) : avatar_src;
                         const timeString = formatTime(date);
@@ -812,7 +821,7 @@ function Chats(){
     }
 
     function iniciarGravacaoAudio() {
-        if (!usuarioLogado || !chatAtivo.current) return;
+        if (!usuarioLogado || !otherUser.current) return;
         
         if (!navigator.mediaDevices || !window.MediaRecorder) {
             showPopup.current("Seu navegador não suporta gravação de áudio.");
@@ -1010,7 +1019,7 @@ function Chats(){
     }
     
     function enviarAudioMensagem(audioBlob: any) {
-      if (!usuarioLogado || !chatAtivo.current || !audioBlob) return;
+      if (!usuarioLogado || !otherUser.current || !audioBlob) return;
     
       const audioFileName = `audio_${usuarioLogado.uid}_${Date.now()}.wav`;
     
@@ -1268,22 +1277,31 @@ function Chats(){
         if (!usuarioLogado) return;
 
         if (location.pathname === "/chat"){
-            const query = new URLSearchParams(location.search);
-            const currentChatId = query.get("id");
-            if (currentChatId){
-                const ids = currentChatId.split("_");
-                chatAtivo.current = usuarioLogado.uid === ids[0] ? ids[1] : ids[0];
-                chatId.current = currentChatId;
+            const queryParams = new URLSearchParams(location.search);
+            const otherUserId = queryParams.get("id");
+            if (otherUserId){
+                const ids = otherUserId.split("_");
+                const otherId = usuarioLogado.uid === ids[0] ? ids[1] : ids[0];
+                
+                getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", usuarioLogado!.uid))).then(result=>{
+                    myUser.current = result.docs[0].data() as chatUser;
+                });
+                getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", otherId))).then(result=>{
+                    otherUser.current = result.docs[0].data() as chatUser;
+                    
+                    chatId.current = otherUserId;
 
-                const chatBox = document.getElementById("chat-box")!;
+                    const chatBox = document.getElementById("chat-box")!;
 
-                chatBox.style.display = "block";
+                    chatBox.style.display = "block";
 
-                carregarMensagens();
+                    carregarMensagens();
 
-                marcarMensagensComoLidas();
+                    marcarMensagensComoLidas();
 
-                monitorarDigitacao();
+                    monitorarDigitacao();
+                })
+
             } else {
                 navigate("/chats");
             }

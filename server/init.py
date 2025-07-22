@@ -1,7 +1,7 @@
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, messaging
 
 def load_creds():
     import os
@@ -21,5 +21,7 @@ def get_drive_service():
 def get_firebase_db():
     cred = credentials.Certificate('service_account.json')
     firebase_admin.initialize_app(cred)
-
     return firestore.client()
+
+def get_messaging():
+    return messaging

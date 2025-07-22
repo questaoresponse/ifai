@@ -1,4 +1,4 @@
-from flask import Flask, send_file, send_from_directory, request, jsonify
+from flask import Flask, send_file, send_from_directory, request, jsonify, make_response
 from flask_cors import CORS
 import io
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
@@ -7,7 +7,8 @@ import time
 import requests
 import asyncio
 from threading import Thread
-from init import get_drive_service, get_firebase_db
+from init import get_drive_service, get_firebase_db, get_messaging
+import json
 
 # import smtplib
 # import dns.resolver
@@ -29,6 +30,7 @@ FOLDER_ID = '1ZCCRGYliF8_02KTDlr1zlOBRhaETjED4'
 
 service = get_drive_service()
 db = get_firebase_db()
+messaging = get_messaging()
 
 # ➕ Criar arquivo
 def upload_file(file_path):
@@ -210,6 +212,19 @@ def perfil():
 
             return jsonify(data), 200
 
+@app.route("/like_action", methods=["POST"])
+def like_action():
+    data = request.get_json()
+
+    action = data["action"]
+    post_id = data["post_id"]
+
+    if action == "like":
+        for doc in db.collection("posts").where(filter=("id", "==", post_id)).stream():
+            doc.reference.update({ 
+                "likes": data["file_id"]
+            })
+
 # email = "catce.2025111ISINF0063@aluno.ifpi.edu.br"
 # url = "https://api.emailawesome.com/api/validations/email_validation"
 # headers = {
@@ -262,6 +277,68 @@ def verification():
 def home():
     return send_file("public/index.html")
 
+@app.route("/message", methods=["POST"])
+def message():
+    data = request.get_json()
+
+    title = data["title"]
+    body = data["body"]
+    user_uid = data["other_uid"]
+    for doc in db.collection("usuarios").where("uid", "==", user_uid).stream():
+        doc_data = doc.to_dict()
+
+        tokens = list(json.loads(doc_data["tokens"]).keys())
+        # token = "dl0xtGwinBFfEq2IakqnUe:APA91bFJT8DedKvr9jiQt1889KOB0QFb3lTbGmkfXPOtFeYh1CF5CGdPYsE65OwjWt5yIu2yNWkWoCxAzBeALuGyCqpnWfrj35U7b8YK82ItcKCPyrDPwXc"
+        # Monta a mensagem
+        message = messaging.MulticastMessage(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            tokens=tokens,
+        )
+
+        # Envia a mensagem
+        messaging.send_each_for_multicast(message)
+        return jsonify({ "result": True })
+    
+# for doc in db.collection("usuarios").stream():
+#     doc_data = doc.to_dict()
+#     doc_data["tokens"] = json.dumps({})
+#     doc.reference.set(doc_data)
+
+@app.route("/token", methods=["POST"])
+def token():
+    data = request.get_json()
+    new_token = data["token"]
+    user_uid = data["user_uid"]
+    current_token = request.cookies.get("token")
+
+    if (current_token!=new_token):
+        for doc in db.collection("usuarios").where("uid", "==", user_uid).stream():
+            doc_data = doc.to_dict()
+
+            tokens = json.loads(doc_data["tokens"])
+            if current_token:
+                del tokens[current_token]
+            
+            tokens[new_token] = int(time.time() * 1000)
+
+            tokens = json.dumps(tokens)
+
+            doc.reference.update({ 
+                "tokens": tokens 
+            })
+
+            response = make_response(json.dumps({ "result": True }))
+            response.set_cookie('token', new_token, httponly=True, samesite=None, max_age=3600)
+            
+            return response
+        
+        return jsonify({ "result": False })
+    else:
+        return jsonify({ "result": True })
+
 @app.route("/<route>")
 def route(route):
     return send_file("public/index.html")
@@ -280,15 +357,17 @@ def static_files(filename):
 
 @app.route('/imagem/<file_id>')
 def baixar_imagem(file_id):
-    request = service.files().get_media(
-        fileId=file_id,
-        supportsAllDrives=True
-    )
+    print(file_id)
+    request = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
     downloader = MediaIoBaseDownload(fh, request)
+
     done = False
-    while not done:
+    while done is False:
         status, done = downloader.next_chunk()
+        print(f"Download {int(status.progress() * 100)}%.")
+    
+    # Volta para o início do buffer
     fh.seek(0)
     return send_file(fh, mimetype='image/jpeg')
 

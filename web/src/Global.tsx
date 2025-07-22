@@ -1,10 +1,17 @@
 import React, { createContext, useContext, useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 
 import { getAuth, type User } from "firebase/auth";
-import { initializeFirebase, setUser } from './Functions';
+import { getToken, initializeFirebase, messaging, onMessage, setUser } from './Functions';
 import { collection, getDocs, query, where, type Firestore } from 'firebase/firestore';
+import auth from './Auth';
 
 const server = import.meta.env.DEV ? window.location.hostname == "localhost" ? "http://localhost:5174" : "https://6v9s4f5f-5174.brs.devtunnels.ms" : "https://ifai-phwn.onrender.com";
+
+if (navigator.serviceWorker.controller) {
+  navigator.serviceWorker.controller.postMessage({
+    server
+  });
+}
 
 type GlobalContextInterface = {
     db: RefObject<Firestore | null>,
@@ -57,12 +64,41 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
                         setUser(currentUser);
                         setUsuarioLogado(user);
                     });
+
+                    Notification.requestPermission().then((permission) => {
+                        if (permission === 'granted') {
+                            getToken(messaging!, {
+                                vapidKey: 'BMnpFNI__s7Nfy5f9iau1GzD-VG2KsAG_Dz-du_lglQi642tZhK4oHbpH85tAVEWjR-3Q2gtLBCiPvxKfBDN-L8'
+                            })
+                            .then((currentToken) => {
+                                if (currentToken) {
+                                    auth.post(server + "/token", { user_uid: user.uid, token: currentToken });
+
+                                } else {
+                                    console.log('Nenhum token disponível.');
+                                }
+                            })
+                            .catch((err) => {
+                                console.log('Erro ao obter token:', err);
+                            });
+                        }
+                    });
                 } else {
                     setUsuarioLogado(undefined);
                 }
                 setShow(true);
             });
+
+                // Escuta mensagens enquanto a aba está ativa
+            onMessage(messaging!, (payload) => {
+                console.log('Mensagem recebida no foreground:', payload);
+                new Notification(payload.notification!.title!, {
+                    body: payload.notification!.body,
+                    icon: '/icon.png'
+                });
+            });
         });
+  
         verifyMobile();
         window.addEventListener("resize", verifyMobile);
 
