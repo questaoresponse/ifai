@@ -400,7 +400,8 @@ def logout():
 
             response = make_response(json.dumps({ "result": True }))
             response.set_cookie('token', "", httponly=True, samesite=None, max_age=0)
-
+            
+            return response
     else:
         return jsonify({ "result": True })
 
