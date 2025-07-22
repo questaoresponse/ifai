@@ -397,9 +397,9 @@ def logout():
             doc.reference.update({ 
                 "tokens": tokens 
             })
-            
+
             response = make_response(json.dumps({ "result": True }))
-            response.set_cookie('token', "", httponly=True, samesite=None, max_age=-1)
+            response.set_cookie('token', "", httponly=True, samesite=None, max_age=0)
 
     else:
         return jsonify({ "result": True })
