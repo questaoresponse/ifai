@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+
+<div id="grafico" style="width: 700px; height: 300px;"></div>
+<button onclick="baixar1()">Baixar</button>
+
+<script>
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+    
+    var chart1;
+
+    function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+            ['Método de Estudo', 'Precisão (%)', { role: 'style' }],
+            ['Repetição Espaçada', 80, 'color: green'],
+            ['Outros métodos', 60, 'color: red']
+        ]);
+        var options = {
+            title: 'Precisão de Recordação por Método de Estudo',
+            bar: { groupWidth: '15%' },
+            legend: { position: 'right' }, // pode ser 'bottom', 'top', etc.
+            chartArea: { left: 50, top: 50, width: '80%', height: '70%' },
+            vAxis: { minValue: 0, maxValue: 100 }
+        };
+        chart1 = new google.visualization.ColumnChart(document.getElementById('grafico'));
+        chart1.draw(data, options);
+    }
+    function baixar1() {
+        const imageURI = chart1.getImageURI();
+        const link = document.createElement('a');
+        link.href = imageURI;
+        link.download = 'grafico_fundamentacao_teorica.png';
+        link.click();
+    }
+</script>
+
+<div id="graficoPizza" style="width: 900px; height: 300px;"></div>
+<button onclick="baixar2()">Baixar</button>
+<script>
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    var chart2;
+
+    function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+            ['Método de Estudo', 'Precisão (%)'],
+            ['Repetição Espaçada', 80],
+            ['Estudo em Bloco', 60]
+        ]);
+
+        var options = {
+            title: 'Precisão de Recordação por Método de Estudo'
+        };
+
+        chart2 = new google.visualization.PieChart(document.getElementById('graficoPizza'));
+        chart2.draw(data, options);
+    }
+
+    function baixar2() {
+        const imageURI = chart2.getImageURI();
+        const link = document.createElement('a');
+        link.href = imageURI;
+        link.download = 'grafico.png';
+        link.click();
+    }
+</script>
+</body>
+</html>

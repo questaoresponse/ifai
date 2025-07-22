@@ -19,10 +19,6 @@ interface DeckInterface {
   flashcards: FlashcardInterface[];
 }
 
-interface flashcardAppInterface{
-    [ key: string ]: any
-}
-
 function FlashCards(){
     const { usuarioLogado } = useGlobal();
 
@@ -50,81 +46,84 @@ function FlashCards(){
         ask: useRef<HTMLInputElement>(null)
     }
 
-    const flashcardApp: flashcardAppInterface = useRef({
 
-        init: function () {
-          this.loadDecks();
-        },
+    function init() {
+        loadDecks();
+    }
 
-        loadDecks: function () {
-          const savedDecks = localStorage.getItem("flashcardDecks");
-          if (savedDecks) {
+    function loadDecks() {
+        const savedDecks = localStorage.getItem("flashcardDecks");
+        if (savedDecks) {
             const newDecks = JSON.parse(savedDecks);
             setDecks(newDecks);
-            this.renderDecks(newDecks);
-          }
-        },
+            renderDecks(newDecks);
+        }
+    }
 
-        saveDecks: function (decks: DeckInterface[]) {
-          localStorage.setItem("flashcardDecks", JSON.stringify(decks));
-        },
+    function saveDecks(decks: DeckInterface[]) {
+        localStorage.setItem("flashcardDecks", JSON.stringify(decks));
+    }
 
-        toggleDeckForm: function (show: any) {
-          const form = document.getElementById("deckForm")!;
-          form.classList.toggle("hidden", !show);
-        },
+    function toggleDeckForm(show: any) {
+        const form = document.getElementById("deckForm")!;
+        form.classList.toggle("hidden", !show);
+    }
 
-        toggleFlashcardForm: function (show: any) {
-          const form = document.getElementById("flashcardForm")!;
-          form.classList.toggle("hidden", !show);
-        },
+    function toggleFlashcardForm(show: any) {
+        const form = document.getElementById("flashcardForm")!;
+        form.classList.toggle("hidden", !show);
+    }
 
-        resetDeckForm: function () {
-            (document.getElementById("deckName") as HTMLInputElement)!.value = "";
-            (document.getElementById("deckDescription") as HTMLInputElement)!.value = "";
-        },
+    function resetDeckForm() {
+        (document.getElementById("deckName") as HTMLInputElement)!.value = "";
+        (document.getElementById("deckDescription") as HTMLInputElement)!.value = "";
+    }
 
-        resetFlashcardForm: function () {
-            (document.getElementById("cardFront") as HTMLInputElement)!.value = "";
-            (document.getElementById("cardBack") as HTMLInputElement)!.value = "";
-        },
+    function resetFlashcardForm() {
+        (document.getElementById("cardFront") as HTMLInputElement)!.value = "";
+        (document.getElementById("cardBack") as HTMLInputElement)!.value = "";
+    }
 
-        saveNewDeck: function () {
-          const name = (document.getElementById("deckName") as HTMLInputElement)!.value.trim();
-          const description = (document
+    function saveNewDeck() {
+        const name = (document.getElementById("deckName") as HTMLInputElement)!.value.trim();
+        const description = (document
             .getElementById("deckDescription") as HTMLInputElement)!
             .value.trim();
 
-          if (!name) {
+        if (!name) {
             showPopup.current("Por favor, insira um nome para o deck.");
             return;
-          }
+        }
 
-          const newDeck = {
+        const newDeck = {
             id: Date.now().toString(),
             name: name,
             description: description,
             flashcards: [],
-          };
-          const newDecks = [...decks, newDeck];
-          setDecks(newDecks);
-          this.saveDecks(newDecks);
-          this.renderDecks(newDecks);
-          this.toggleDeckForm(false);
-          this.resetDeckForm();
-        },
+        };
 
-        saveNewFlashcard: function () {
-          const front = (document.getElementById("cardFront") as HTMLInputElement)!.value.trim();
-          const back = (document.getElementById("cardBack") as HTMLInputElement)!.value.trim();
+        const newDecks = [...decks, newDeck];
+        setDecks(newDecks);
+        saveDecks(newDecks);
+        renderDecks(newDecks);
+        toggleDeckForm(false);
+        resetDeckForm();
+    }
 
-          if (!front || !back) {
+    function saveNewFlashcard() {
+        const front = (document.getElementById("cardFront") as HTMLInputElement)!.value.trim();
+        const back = (document.getElementById("cardBack") as HTMLInputElement)!.value.trim();
+
+        if (!front || !back) {
             showPopup.current("Por favor, preencha ambos os lados do flashcard.");
             return;
-          }
+        }
 
-          const deck = decks.find((d) => d.id === currentDeck);
-          if (deck) {
+        setDecks(decks=>{
+            console.log(currentDeck, decks);
+            const deck = decks.find((d) => d.id === currentDeck);
+            console.log(deck)
+            if (deck) {
                 deck.flashcards.push({
                     id: Date.now().toString(),
                     front: front,
@@ -133,122 +132,127 @@ function FlashCards(){
 
                 const decksValue = decks.map(deckValue=>deckValue.id === currentDeck ? deck : deckValue);
 
-                setDecks(decksValue);
+                saveDecks(decksValue);
+                renderFlashcards(deck.id, decksValue);
+                toggleFlashcardForm(false);
+                resetFlashcardForm();
 
-                this.saveDecks(decksValue);
-                this.renderFlashcards(deck.id);
-                this.toggleFlashcardForm(false);
-                this.resetFlashcardForm();
-          }
-        },
+                return decksValue;
+            }
 
-        deleteDeck: function (deckId: any) {
-            const newDecks = decks.filter((deck: any) => deck.id !== deckId);
-            console.log(newDecks.length,decks.length);
-            setDecks(newDecks);
-            this.saveDecks(newDecks);
-            this.renderDecks(newDecks);
-        },
+            return decks;
+        });
+    }
 
-        deleteFlashcard: function (cardId: any) {
-          const deck = decks.find((d) => d.id === currentDeck);
-          if (deck) {
+    function deleteDeck(deckId: any) {
+        const newDecks = decks.filter((deck: any) => deck.id !== deckId);
+        setDecks(newDecks);
+        saveDecks(newDecks);
+        renderDecks(newDecks);
+    }
+
+    function deleteFlashcard(cardId: any) {
+        const deck = decks.find((d) => d.id === currentDeck);
+        if (deck) {
             deck.flashcards = deck.flashcards.filter(
-              (card) => card.id !== cardId
+                (card) => card.id !== cardId
             );
             const newDecks = decks.map(deckValue => deckValue.id == currentDeck ? deck : deckValue);
-            this.saveDecks(newDecks);
-            this.renderFlashcards(deck.id);
-          }
-        },
+            saveDecks(newDecks);
+            renderFlashcards(deck.id);
+        }
+    }
 
-        renderDecks: function (decks: DeckInterface[]) {
-            setHasDecks(decks.length > 0);
-        },
+    function renderDecks(decks: DeckInterface[]) {
+        setHasDecks(decks.length > 0);
+    }
 
-        showDeck: function (deckId: any) {
-            const deck = decks.find((d) => d.id === deckId);
-            if (deck) {
-                setCurrentDeck(deckId);
-                this.renderFlashcards(deckId);
-                setPage("flashcards");
-            }
-        },
+    function showDeck(deckId: any) {
+        const deck = decks.find((d) => d.id === deckId);
+        console.log(deck, deckId);
+        if (deck) {
+            setCurrentDeck(deckId);
+            renderFlashcards(deckId);
+            setPage("flashcards");
+        }
+    }
 
-        renderFlashcards: function (deckId: string) {
-            const deck = decks.find((d) => d.id === deckId);
+    function renderFlashcards(deckId: string, decksValue2: any = null) {
+        const decksValue = decksValue2 || decks;
+        const deck = decksValue.find((d: any) => d.id === deckId);
 
-            if (!deck) return;
+        console.log(deck);
 
-            const list = deck.flashcards;
-            for (let i = list.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [list[i], list[j]] = [list[j], list[i]]; // troca os elementos
-            }
-            
-            deck.flashcards = list;
+        if (!deck) return;
 
-            setDecks(decks=>decks.map(deckValue=>deckValue.id == deck.id ? deck : deckValue));
-        },
+        const list = deck.flashcards;
+        for (let i = list.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [list[i], list[j]] = [list[j], list[i]]; // troca os elementos
+        }
+        
+        deck.flashcards = list;
 
-        startStudyMode: function () {
-            const deck = decks.find((d) => d.id === currentDeck);
-            if (!deck || deck.flashcards.length === 0) {
-                showPopup.current("Este deck não possui flashcards para estudar.");
-                return;
-            }
+        setDecks(decks=>(decksValue2 || decks).map((deckValue: any)=>deckValue.id == deck.id ? deck : deckValue));
+    }
 
-            const currentCardIndex = 0;
-            setCurrentCardIndex(currentCardIndex);
+    function startStudyMode() {
+        const deck = decks.find((d) => d.id === currentDeck);
+        if (!deck || deck.flashcards.length === 0) {
+            showPopup.current("Este deck não possui flashcards para estudar.");
+            return;
+        }
 
-            this.updateStudyCard(currentCardIndex);
-            this.updateProgress(currentCardIndex);
-            setPage("study");
-        },
+        const currentCardIndex = 0;
+        setCurrentCardIndex(currentCardIndex);
 
-        updateStudyCard: function (currentCardIndex: number) {
-            const deck = decks.find((d) => d.id === currentDeck);
-            if (!deck || !deck.flashcards[currentCardIndex]) return;
+        updateStudyCard(currentCardIndex);
+        updateProgress(currentCardIndex);
+        setPage("study");
+    }
 
-            setShowBackCard(false);
-        },
+    function updateStudyCard(currentCardIndex: number) {
+        const deck = decks.find((d) => d.id === currentDeck);
+        if (!deck || !deck.flashcards[currentCardIndex]) return;
 
-        updateProgress: function (currentCardIndex: number) {
-            const deck = decks.find((d) => d.id === currentDeck);
-            if (!deck) return;
+        setShowBackCard(false);
+    }
 
-            const progress = (currentCardIndex / deck.flashcards.length) * 100;
-            setProgress(`${progress}%`);
-        },
+    function updateProgress(currentCardIndex: number) {
+        const deck = decks.find((d) => d.id === currentDeck);
+        if (!deck) return;
 
-        showNextCard: function (currentCardIndex: number) {
-            const deck = decks.find((d) => d.id === currentDeck);
-            if (!deck) return;
+        const progress = (currentCardIndex / deck.flashcards.length) * 100;
+        setProgress(`${progress}%`);
+    }
 
-            if (currentCardIndex < deck.flashcards.length - 1) {
-                const currentCardIndexValue = currentCardIndex + 1;
-
-                setCurrentCardIndex(currentCardIndexValue);
-
-                this.updateStudyCard(currentCardIndexValue);
-                this.updateProgress(currentCardIndexValue);
-            } else {
-                setPage("flashcards");
-            }
-        },
-
-        showPreviousCard: function () {
-          if (currentCardIndex > 0) {
+    function showPreviousCard() {
+        if (currentCardIndex > 0) {
             const currentCardIndexValue = currentCardIndex - 1;
-            this.updateStudyCard(currentCardIndexValue);
-            this.updateProgress(currentCardIndexValue);
-          }
-        },
+            updateStudyCard(currentCardIndexValue);
+            updateProgress(currentCardIndexValue);
+        }
+    }
 
-        toggleStudyCard: function () {
-            setShowBackCard(true);
-        },
-      });
+    function showNextCard() {
+        const deck = decks.find((d) => d.id === currentDeck);
+        if (!deck) return;
+
+        if (currentCardIndex < deck.flashcards.length - 1) {
+            const currentCardIndexValue = currentCardIndex + 1;
+
+            setCurrentCardIndex(currentCardIndexValue);
+
+            updateStudyCard(currentCardIndexValue);
+            updateProgress(currentCardIndexValue);
+        } else {
+            setPage("flashcards");
+        }
+    }
+
+    function toggleStudyCard() {
+        setShowBackCard(true);
+    }
 
     const generateFlashCard = async () => {
         setFlashCardMenu(false);
@@ -282,7 +286,7 @@ function FlashCards(){
             }));
 
             const newDeck = decks.map(deck => deck.id == currentDeck ? {...deck, flashcards: [...deck.flashcards, ...newFlashCards]} : deck);
-            flashcardApp.current.saveDecks(newDeck);
+            saveDecks(newDeck);
             setDecks(newDeck)
         } catch (error) {
             console.error("Erro ao gerar conteúdo:", error);
@@ -291,7 +295,7 @@ function FlashCards(){
 
     useEffect(() => {
         if (usuarioLogado) {
-            flashcardApp.current.init();
+            init();
         }
     }, [usuarioLogado]);
     return <>
@@ -301,7 +305,7 @@ function FlashCards(){
                 <div id="decksView">
                 <div className="card">
                     <h2>Meus decks</h2>
-                    <button id="createDeckBtn" className="btn" onClick={()=>flashcardApp.current.toggleDeckForm(true)}>
+                    <button id="createDeckBtn" className="btn" onClick={()=>toggleDeckForm(true)}>
                     <i className="fas fa-plus"></i> Criar novo deck
                     </button>
 
@@ -322,8 +326,8 @@ function FlashCards(){
                         </div>
                     </div>
                     <div>
-                        <button id="saveDeckBtn" className="btn btn-success" onClick={()=>flashcardApp.current.saveNewDeck()}>Criar</button>
-                        <button id="cancelDeckBtn" className="btn btn-outline" onClick={()=>{flashcardApp.current.toggleDeckForm(false);flashcardApp.current.resetDeckForm();}}>
+                        <button id="saveDeckBtn" className="btn btn-success" onClick={()=>saveNewDeck()}>Criar</button>
+                        <button id="cancelDeckBtn" className="btn btn-outline" onClick={()=>{toggleDeckForm(false);resetDeckForm();}}>
                         Cancelar
                         </button>
                     </div>
@@ -331,9 +335,9 @@ function FlashCards(){
 
                     <div id="decksList" className="decks-container">
                         { hasDecks ? decks.map((deck, index: number)=>{
-                            return <div className="deck" onClick={()=>flashcardApp.current.showDeck(deck.id)} key={index}>
+                            return <div className="deck" onClick={()=>showDeck(deck.id)} key={index}>
                                 <div className="deck-actions">
-                                <button onClick={()=>flashcardApp.current.deleteDeck(deck.id)}>
+                                <button onClick={()=>deleteDeck(deck.id)}>
                                     <i className="fas fa-trash"></i>
                                 </button>
                                 </div>
@@ -345,7 +349,7 @@ function FlashCards(){
                             <i className="fas fa-inbox"></i>
                             <h3>Nenhum deck encontrado</h3>
                             <p>Crie seu primeiro deck para começar a adicionar flashcards</p>
-                            <button className="btn" onClick={()=>flashcardApp.current.toggleDeckForm(true)}>Criar deck</button>
+                            <button className="btn" onClick={()=>toggleDeckForm(true)}>Criar deck</button>
                         </div> }
 
                     </div>
@@ -358,10 +362,10 @@ function FlashCards(){
                         <button id="backToDecksBtn" className="btn btn-outline" onClick={()=>setPage("decks")}>
                             <i className="fas fa-arrow-left"></i> Voltar para Decks
                         </button>
-                        <button id="addFlashcardBtn" className="btn" onClick={()=>flashcardApp.current.toggleFlashcardForm(true)}>
+                        <button id="addFlashcardBtn" className="btn" onClick={()=>toggleFlashcardForm(true)}>
                             <i className="fas fa-plus"></i> Adicionar flashcard
                         </button>
-                        <button id="studyDeckBtn" className="btn btn-success" onClick={()=>flashcardApp.current.startStudyMode()}>
+                        <button id="studyDeckBtn" className="btn btn-success" onClick={()=>startStudyMode()}>
                             <i className="fas fa-graduation-cap"></i> Estudar deck
                         </button>
                         <button id="generateFlashCard" onClick={()=>setFlashCardMenu(true)}>{ awaitingGeneration ? "Gerando..." : "Gerar flashcards" }</button>
@@ -388,10 +392,10 @@ function FlashCards(){
                         </div>
                     </div>
                     <div>
-                        <button id="saveFlashcardBtn" className="btn btn-success" onClick={()=>flashcardApp.current.saveNewFlashcard()}>
+                        <button id="saveFlashcardBtn" className="btn btn-success" onClick={()=>saveNewFlashcard()}>
                             Salvar flashcard
                         </button>
-                        <button id="cancelFlashcardBtn" className="btn btn-outline" onClick={()=>{flashcardApp.current.toggleFlashcardForm(false);flashcardApp.current.resetFlashcardForm();}}>
+                        <button id="cancelFlashcardBtn" className="btn btn-outline" onClick={()=>{toggleFlashcardForm(false);resetFlashcardForm();}}>
                             Cancelar
                         </button>
                     </div>
@@ -402,7 +406,7 @@ function FlashCards(){
                             <i className="fas fa-sticky-note"></i>
                             <h3>Nenhum flashcard neste deck</h3>
                             <p>Adicione seu primeiro flashcard para começar a estudar</p>
-                            <button className="btn" onClick={()=>flashcardApp.current.toggleFlashcardForm(true)}>Adicionar flashcard</button>
+                            <button className="btn" onClick={()=>toggleFlashcardForm(true)}>Adicionar flashcard</button>
                         </div>
                     : decks.filter(deck=>deck.id == currentDeck)[0].flashcards.map((card, index: number)=>{
                         return <div className="flashcard" onClick={(e: any)=>!e.target.closest(".card-actions") && e.target.classList.toggle("show-back")} key={index}>
@@ -413,7 +417,7 @@ function FlashCards(){
                                 <h3>{card.back}</h3>
                                 </div>
                                 <div className="card-actions">
-                                <button className="btn btn-danger" onClick={()=>flashcardApp.current.deleteFlashcard(card.id)}>
+                                <button className="btn btn-danger" onClick={()=>deleteFlashcard(card.id)}>
                                     <i className="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -432,7 +436,7 @@ function FlashCards(){
                         <span id="totalCards">{decks.filter(deck => deck.id == currentDeck)[0].flashcards.length}</span>
                     </p>
 
-                    <div className="study-card" id="studyCard" onClick={()=>flashcardApp.current.toggleStudyCard()}>
+                    <div className="study-card" id="studyCard" onClick={()=>toggleStudyCard()}>
                         <div className="study-card-front" style={{ display: showBackCard ? "none" : "block" }}>
                             <h3 id="studyFront">{decks.filter(deck => deck.id == currentDeck)[0].flashcards[currentCardIndex].front}</h3>
                             <p>Clique no card para ver a resposta</p>
@@ -444,10 +448,10 @@ function FlashCards(){
                     </div>
 
                     <div className="study-controls">
-                    <button id="prevCardBtn" className="btn btn-outline" onClick={()=>flashcardApp.current.showPreviousCard(currentCardIndex)}>
+                    <button id="prevCardBtn" className="btn btn-outline" onClick={()=>showPreviousCard()}>
                         <i className="fas fa-arrow-left"></i> Anterior
                     </button>
-                    <button id="nextCardBtn" className="btn" onClick={()=>flashcardApp.current.showNextCard(currentCardIndex)}>
+                    <button id="nextCardBtn" className="btn" onClick={()=>showNextCard()}>
                         Próximo <i className="fas fa-arrow-right"></i>
                     </button>
                     <button id="endStudyBtn" className="btn btn-danger" onClick={()=>setPage("flashcards")}>
