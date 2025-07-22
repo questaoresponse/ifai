@@ -341,6 +341,9 @@ def token():
 
 @app.route("/<route>")
 def route(route):
+    if route in [ "favicon.ico", "firebase-messaging-sw.js", "service-worker.js" ]:
+        return send_file(f"public/{route}")
+
     return send_file("public/index.html")
 
 @app.route("/favicon.ico")
