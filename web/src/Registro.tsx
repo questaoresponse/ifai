@@ -58,6 +58,7 @@ function Registro() {
             password: senha,
             timestamp,
             uid: user.uid,
+            tokens:  JSON.stringify({})
           });
         })
         .catch((err) => {
