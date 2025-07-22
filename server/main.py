@@ -284,6 +284,8 @@ def message():
     title = data["title"]
     body = data["body"]
     user_uid = data["other_uid"]
+    chat_id = data["chat_id"]
+    origin = request.headers.get('Origin')
     for doc in db.collection("usuarios").where("uid", "==", user_uid).stream():
         doc_data = doc.to_dict()
 
@@ -292,7 +294,7 @@ def message():
         # Monta a mensagem
         message = messaging.MulticastMessage(
             data={
-                "url": request.url
+                "url": f"{origin}/chat?id={chat_id}"
             },
             notification=messaging.Notification(
                 title=title,

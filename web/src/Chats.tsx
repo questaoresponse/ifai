@@ -162,7 +162,7 @@ function Chats(){
             });
         }
 
-        auth.post(server + "/message", { title: myUser.current!.nome, body: message, other_uid: otherUser.current.uid });
+        auth.post(server + "/message", { title: myUser.current!.nome, body: message, other_uid: otherUser.current.uid, chat_id: new URLSearchParams(location.search).get("id") });
         
         const novaMensagem = {
             remetente: usuarioLogado!.uid,
