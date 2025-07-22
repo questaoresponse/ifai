@@ -18,6 +18,18 @@ messaging.onBackgroundMessage(payload => {
   console.log('[firebase-messaging-sw.js] Background message:', payload);
   self.registration.showNotification(payload.notification.title, {
     body: payload.notification.body,
-    icon: '/icon.png'
+    icon: '/icon.png',
+    data: {
+        url: payload.notification.data.url
+    }
   });
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close(); // fecha a notificação
+
+  // Abre uma janela/aba com a URL desejada
+  event.waitUntil(
+    clients.openWindow(event.notification.data?.url || 'https://ifai-phwn.onrender.com') // substitua pela URL que quiser
+  );
 });

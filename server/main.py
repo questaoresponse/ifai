@@ -291,6 +291,9 @@ def message():
         # token = "dl0xtGwinBFfEq2IakqnUe:APA91bFJT8DedKvr9jiQt1889KOB0QFb3lTbGmkfXPOtFeYh1CF5CGdPYsE65OwjWt5yIu2yNWkWoCxAzBeALuGyCqpnWfrj35U7b8YK82ItcKCPyrDPwXc"
         # Monta a mensagem
         message = messaging.MulticastMessage(
+            data={
+                "url": request.url
+            },
             notification=messaging.Notification(
                 title=title,
                 body=body,

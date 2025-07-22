@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 
 import { getAuth, type User } from "firebase/auth";
-import { getToken, initializeFirebase, messaging, onMessage, setUser } from './Functions';
+import { getToken, initializeFirebase, messaging, setUser } from './Functions';
 import { collection, getDocs, query, where, type Firestore } from 'firebase/firestore';
 import auth from './Auth';
 
@@ -90,13 +90,13 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
             });
 
                 // Escuta mensagens enquanto a aba está ativa
-            onMessage(messaging!, (payload) => {
-                console.log('Mensagem recebida no foreground:', payload);
-                new Notification(payload.notification!.title!, {
-                    body: payload.notification!.body,
-                    icon: '/icon.png'
-                });
-            });
+            // onMessage(messaging!, (payload) => {
+            //     console.log('Mensagem recebida no foreground:', payload);
+            //     new Notification(payload.notification!.title!, {
+            //         body: payload.notification!.body,
+            //         icon: '/icon.png'
+            //     });
+            // });
         });
   
         verifyMobile();
