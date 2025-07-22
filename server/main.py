@@ -379,6 +379,31 @@ def baixar_imagem(file_id):
     fh.seek(0)
     return send_file(fh, mimetype='image/jpeg')
 
+@app.route("/logout", methods=["POST"])
+def logout():
+    data = request.get_json()
+    user_uid = data["user_uid"]
+    current_token = request.cookies.get("token")
+
+    if (current_token):
+        for doc in db.collection("usuarios").where("uid", "==", user_uid).stream():
+            doc_data = doc.to_dict()
+
+            tokens = json.loads(doc_data["tokens"])
+            del tokens[current_token]
+            
+            tokens = json.dumps(tokens)
+
+            doc.reference.update({ 
+                "tokens": tokens 
+            })
+            
+            response = make_response(json.dumps({ "result": True }))
+            response.set_cookie('token', "", httponly=True, samesite=None, max_age=-1)
+
+    else:
+        return jsonify({ "result": True })
+
 async def loop():
     while True:
         await asyncio.sleep(10)

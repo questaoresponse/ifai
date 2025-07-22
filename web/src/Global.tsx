@@ -43,7 +43,9 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
     }
 
     const logout = () => {
+
         getAuth().signOut().then(() => {
+            auth.post(server + "/logout", { user_uid: usuarioLogado!.uid });
             setUser(undefined);
             setUsuarioLogado(undefined);
         });
@@ -73,7 +75,6 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
                             .then((currentToken) => {
                                 if (currentToken) {
                                     auth.post(server + "/token", { user_uid: user.uid, token: currentToken });
-
                                 } else {
                                     console.log('Nenhum token disponível.');
                                 }
