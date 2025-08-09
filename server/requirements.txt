@@ -6,9 +6,9 @@ google-auth-oauthlib
 google-auth-httplib2
 httpx
 # dnspython
+python-socketio
 quart
 quart_cors
-socketio
 uvicorn
 # validate-email-address
 # py3dns
