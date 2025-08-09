@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { atualizarNotificacoesChat, formatTime, formatTimestamp, getDriveURL } from "./Functions";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { atualizarNotificacoesChat, getDriveURL, onMessage } from "../Functions";
 import { getDatabase, ref as dbRef, set, query as queryDb, get, onValue, remove, update, push, orderByChild, serverTimestamp } from "firebase/database"
 import { getStorage, ref as storageRef, deleteObject, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
-import avatar_src from "./assets/static/avatar.png";
-import { useGlobal } from "./Global";
+import avatar_src from "../assets/static/avatar.png";
+import { useGlobal } from "../Global";
 import "./Chats.scss";
-import "./Conversations.scss";
+import "../Conversations.scss";
 import { useNavigate } from "react-router-dom";
-import Alert from "./Alert";
+import Alert from "../Alert";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import auth from "./Auth";
+import auth from "../Auth";
+import Messages, { type messageInterface } from "./Messages";
+import History from "./History";
 
 interface audioInterface{
     audioSeconds: number,
@@ -19,12 +21,13 @@ interface audioInterface{
 }
 
 interface chatUser{
-    nome: string,
+    perfil: string,
+    name: string,
     uid: string
 }
 
 function Chats(){
-    const { server, db, mobile, usuarioLogado, refs: { respa } } = useGlobal();
+    const { server, socket, db, mobile, usuarioLogado, refs: { respa } } = useGlobal();
 
     const navigate = useNavigate();
 
@@ -32,7 +35,9 @@ function Chats(){
     const myUser = useRef<chatUser>(null);
     const modoSelecao = useRef<boolean>(false);
     const mensagensSelecionadas = useRef<any[]>([]);
-    const chatId = useRef<string>("");
+    const [ messages, setMessages ] = useState<messageInterface[]>([]);
+    const [ messageInputValue, setMessageInputValue ] = useState("");
+    const chatId = useRef<number>(-1);
 
     const audio = useRef<audioInterface>({
         audioSeconds: 0,
@@ -47,92 +52,15 @@ function Chats(){
 
     const refs = {
         fileInput: useRef<HTMLInputElement>(null),
-        messageInput: useRef<HTMLTextAreaElement>(null)
+        messageInput: useRef<HTMLDivElement>(null)
     }
     
-    const atualizarFriendSelect = () => {
-        if (!usuarioLogado) return;
-        
-        const friendList = document.getElementById("friendList");
-        if (!friendList) {
-            console.error("Elemento friendList não encontrado");
-            return;
-        }
-        friendList.innerHTML = "";
-        get(dbRef(getDatabase(),`friends/${usuarioLogado!.uid}`)).then((snapshot) => {
-            if (snapshot.exists()) {
-                snapshot.forEach((childSnapshot) => {
-                    const uidAmigo = childSnapshot.key;
-                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uidAmigo))).then(results=>{
-                        const userAmigo = results.docs[0].data();
-                        const div = document.createElement("div");
-                        div.classList.add("friend-item");
-                        div.setAttribute("data-uid", uidAmigo);
-                        div.onclick = () => selecionarChat(uidAmigo);
-        
-                        const imgSrc = getDriveURL(userAmigo.fotoPerfil) || avatar_src;
-        
-                        function atualizarUltimaMensagem(snapshot:any) {
-                            let lastMessage = "";
-                            let lastTimestamp = "";
-                            snapshot.forEach((messageSnapshot:any) => {
-                                for (const key in messageSnapshot.val()){
-                                    const message = messageSnapshot.val()[key];
-                                    if (message.texto){
-                                        lastMessage =
-                                            message.texto.length > 10 ?
-                                            message.texto.substring(0, 10) + "..." :
-                                            message.texto;
-                                        lastTimestamp = formatTime(new Date(message.timestamp));
-                                    }
-                                }
-                            });
-            
-                            const badgeId = `badge-${uidAmigo}`;
-                            let badgeHTML = `<span id="${badgeId}" class="notification-badge" style="display: none;"></span>`;
-            
-                            div.innerHTML = `
-                                <img src="${imgSrc}" class="friend-avatar">
-                                <div class="friend-text">
-                                    <strong>${userAmigo.nome} ${badgeHTML}</strong>
-                                    <p>${lastMessage} <span>${lastTimestamp}</span></p>
-                                </div>
-                            `;
-            
-                            atualizarbadge(uidAmigo, badgeId);
-                        }
-        
-                        get(queryDb(
-                            dbRef(getDatabase(), `chats/${chatId.current}`),
-                            // orderByChild("timestamp"),
-                            // limitToLast(1)
-                        )).then((chatSnapshot) => {
-                            atualizarUltimaMensagem(chatSnapshot);
-                            friendList.appendChild(div);
-                        });
-        
-                        get(queryDb(
-                            dbRef(getDatabase(), `chats/${chatId.current}`),
-                            // orderByChild("timestamp"),
-                            // limitToLast(1)
-                        )).then((snapshot) => {
-                            atualizarUltimaMensagem(snapshot);
-                        });
-                    });
-                });
-            }
-        });
-    }
 
-    function selecionarChat(uidAmigo: any) {
-        const NewChatId = [usuarioLogado!.uid, uidAmigo].sort().join("_");
-        navigate("/chat?id=" + NewChatId);
-    }
 
     const enviarMensagem = () => {
         if (!usuarioLogado || !otherUser.current) return;
 
-        const message = refs.messageInput.current!.value;
+        const message = refs.messageInput.current!.textContent!;
         if (message.trim() === "") {
             return;
         }
@@ -162,7 +90,7 @@ function Chats(){
             });
         }
 
-        auth.post(server + "/message", { title: myUser.current!.nome, body: message, other_uid: otherUser.current.uid, chat_id: new URLSearchParams(location.search).get("id") });
+        auth.post(server + "/message", { title: myUser.current!.name, body: message, other_uid: otherUser.current.uid, chat_id: new URLSearchParams(location.search).get("id") });
         
         const novaMensagem = {
             remetente: usuarioLogado!.uid,
@@ -171,13 +99,7 @@ function Chats(){
             lida: false,
         };
         push(dbRef(getDatabase(),`chats/${chatId.current}`), novaMensagem).then(() => {
-            refs.messageInput.current!.value = "";
-            setTimeout(() => {
-                const chatMessagesContainer = document.getElementById("chat-messages");
-                if (chatMessagesContainer) {
-                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                }
-            }, 100);
+            refs.messageInput.current!.textContent! = "";
         });
         
         marcarMensagensComoLidas();
@@ -204,30 +126,6 @@ function Chats(){
                 update(dbRef(getDatabase(), `chats/${chatId.current}`), updates).then(() => {
                     atualizarNotificacoesChat();
                 });
-            }
-        });
-    }
-
-    function atualizarbadge(uidAmigo: string, badgeId: string) {
-
-        onValue(dbRef(getDatabase(),`chats/${chatId.current}`), (snapshot: any) => {
-            let totalNaoLidas = 0;
-
-            snapshot.forEach((messageSnap: any) => {
-                const mensagem = messageSnap.val();
-                if (mensagem.remetente === uidAmigo && mensagem.lida === false) {
-                    totalNaoLidas++;
-                }
-            });
-
-            const badge = document.getElementById(badgeId);
-            if (badge) {
-                if (totalNaoLidas > 0) {
-                    badge.textContent = totalNaoLidas > 99 ? "99+" : String(totalNaoLidas);
-                    badge.style.display = "inline-block";
-                } else {
-                    badge.style.display = "none";
-                }
             }
         });
     }
@@ -367,7 +265,7 @@ function Chats(){
 
     function carregarMensagens() {
         if (!usuarioLogado || !otherUser.current) return;
-        
+
         const chatMessagesContainer = document.getElementById("chat-messages");
         if (!chatMessagesContainer) {
             console.error("Elemento chat-messages não encontrado");
@@ -423,270 +321,282 @@ function Chats(){
             dbRef(getDatabase(),`chats/${chatId.current}`),
             orderByChild("timestamp")
         ), (snapshot) => {
-            chatMessagesContainer.innerHTML = "";
-            let lastTimestamp = 0;
+            const new_messages: messageInterface[] = [];
+
             snapshot.forEach((childSnapshot) => {
-                const messageId = childSnapshot.key;
-                const mensagem = childSnapshot.val();
-                if (mensagem.remetente){
-                    const mensagemContainer = document.createElement("div");
-                    mensagemContainer.style.display = "flex";
-                    mensagemContainer.style.alignItems = "center";
-                    mensagemContainer.style.margin = "10px 0";
+                const new_message = childSnapshot.val();
+                new_message.date = new Date(new_message.timestamp);
+
+                const previous_message_date = new_messages.length > 0 ? new_messages[new_messages.length-1].date : null;
+
+                previous_message_date && (new_message.date.getFullYear() !== previous_message_date.getFullYear() ||
+                new_message.date.getMonth() !== previous_message_date!.getMonth() ||
+                new_message.date.getDate() !== previous_message_date!.getDate())
+                && new_messages.push({ isTime: true, date: new_message.date, id: String(new_message.timestamp) });
+
+                new_messages.push({ ...new_message, isTime: false, timestamp: undefined });
+                // if (mensagem.remetente){
+                // if (false){
+                //     const mensagemContainer = document.createElement("div");
+                //     mensagemContainer.style.display = "flex";
+                //     mensagemContainer.style.alignItems = "center";
+                //     mensagemContainer.style.margin = "10px 0";
         
-                    const img = document.createElement("img");
-                    img.style.width = "40px";
-                    img.style.height = "40px";
-                    img.style.borderRadius = "50%";
-                    img.style.objectFit = "cover";
-                    img.style.marginRight = "10px";
+                //     const img = document.createElement("img");
+                //     img.style.width = "40px";
+                //     img.style.height = "40px";
+                //     img.style.borderRadius = "50%";
+                //     img.style.objectFit = "cover";
+                //     img.style.marginRight = "10px";
         
-                    const div = document.createElement("div");
-                    div.classList.add("message-bubble");
-                    div.style.padding = "8px";
-                    div.style.borderRadius = "15px";
-                    div.style.maxWidth = "fit-content";
-                    div.style.position = "relative";
+                //     const div = document.createElement("div");
+                //     div.classList.add("message-bubble");
+                //     div.style.padding = "8px";
+                //     div.style.borderRadius = "15px";
+                //     div.style.maxWidth = "fit-content";
+                //     div.style.position = "relative";
         
-                    const timestamp = mensagem.timestamp;
-                    const date = new Date(timestamp);
-                    if (timestamp - lastTimestamp > 600000) {
-                        const timeDiv = document.createElement("div");
-                        timeDiv.className = "time-div";
-                        timeDiv.textContent = formatTimestamp(date);
-                        chatMessagesContainer.appendChild(timeDiv);
-                    }
-                    lastTimestamp = timestamp;
-                    if (mensagem.remetente === usuarioLogado!.uid) {
-                    const messageWrapper = document.createElement("div");
-                    messageWrapper.style.position = "relative";
-                    messageWrapper.style.display = "inline-block";
-                    messageWrapper.style.marginLeft = "auto";
-                    messageWrapper.classList.add("mensagem-usuario");
+                //     const timestamp = mensagem.timestamp;
+                //     const date = new Date(timestamp);
+                //     if (timestamp - lastTimestamp > 600000) {
+                //         const timeDiv = document.createElement("div");
+                //         timeDiv.className = "time-div";
+                //         // timeDiv.textContent = formatTimestamp(date);
+                //         chatMessagesContainer!.appendChild(timeDiv);
+                //     }
+                //     lastTimestamp = timestamp;
+                //     if (mensagem.remetente === usuarioLogado!.uid) {
+                //     const messageWrapper = document.createElement("div");
+                //     messageWrapper.style.position = "relative";
+                //     messageWrapper.style.display = "inline-block";
+                //     messageWrapper.style.marginLeft = "auto";
+                //     messageWrapper.classList.add("mensagem-usuario");
         
-                    div.style.backgroundColor = "green";
-                    div.style.color = "white";
-                    div.style.marginLeft = "auto";
-                    const timeString = formatTime(date);
+                //     div.style.backgroundColor = "green";
+                //     div.style.color = "white";
+                //     div.style.marginLeft = "auto";
+                //     // const timeString = formatTime(date);
         
-                    let messageContent = `<div style="font-weight:bold;">Você</div>`;
+                //     let messageContent = `<div style="font-weight:bold;">Você</div>`;
         
-                    if (mensagem.imagem) {
-                        messageContent += `
-                        <div style="margin: 5px 0;">
-                            <img src="${mensagem.imagem}" style="max-width: 250px; max-height: 250px; border-radius: 10px; cursor: pointer;" 
-                            onclick="abrirImagemModal('${mensagem.imagem}')">
-                        </div>
-                        `;
-                    }
+                //     if (mensagem.imagem) {
+                //         messageContent += `
+                //         <div style="margin: 5px 0;">
+                //             <img src="${mensagem.imagem}" style="max-width: 250px; max-height: 250px; border-radius: 10px; cursor: pointer;" 
+                //             onclick="abrirImagemModal('${mensagem.imagem}')">
+                //         </div>
+                //         `;
+                //     }
         
-                    if (mensagem.video) {
-                        messageContent += `
-                        <div style="margin: 5px 0;">
-                            <video src="${mensagem.video}" controls style="max-width: 250px; max-height: 250px; border-radius: 10px;"></video>
-                        </div>
-                        `;
-                    }
+                //     if (mensagem.video) {
+                //         messageContent += `
+                //         <div style="margin: 5px 0;">
+                //             <video src="${mensagem.video}" controls style="max-width: 250px; max-height: 250px; border-radius: 10px;"></video>
+                //         </div>
+                //         `;
+                //     }
         
-                    if (mensagem.audio && mensagem.audio.url) {
-                        const duracao = mensagem.audio.duracao || 0;
-                        const minutos = Math.floor(duracao / 60);
-                        const segundos = duracao % 60;
-                        const duracaoFormatada = `${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
+                //     if (mensagem.audio && mensagem.audio.url) {
+                //         const duracao = mensagem.audio.duracao || 0;
+                //         const minutos = Math.floor(duracao / 60);
+                //         const segundos = duracao % 60;
+                //         const duracaoFormatada = `${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
         
-                        messageContent += `
-                        <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px;">
-                            <audio id="audio-${messageId}" src="${mensagem.audio.url}" preload="auto"></audio>
-                            <button onclick="togglePlayPause('audio-${messageId}', 'play-btn-${messageId}')" 
-                            id="play-btn-${messageId}" style="background: none; border: none; font-size: 20px; color: green; cursor: pointer;">
-                            <i class="fa-solid fa-play"></i>
-                            </button>
-                            <div style="flex-grow: 1; height: 4px; background-color: #e0e0e0; border-radius: 2px; margin: 0 10px; cursor: pointer;" 
-                            onclick="seekAudio('audio-${messageId}', this)">
-                            <div style="height: 100%; width: 0%; background-color: #248232;"></div>
-                            </div>
-                            <div style="font-size: 12px; color: white;">${duracaoFormatada}</div>
-                        </div>
-                        `;
-                    }
+                //         messageContent += `
+                //         <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px;">
+                //             <audio id="audio-${messageId}" src="${mensagem.audio.url}" preload="auto"></audio>
+                //             <button onclick="togglePlayPause('audio-${messageId}', 'play-btn-${messageId}')" 
+                //             id="play-btn-${messageId}" style="background: none; border: none; font-size: 20px; color: green; cursor: pointer;">
+                //             <i class="fa-solid fa-play"></i>
+                //             </button>
+                //             <div style="flex-grow: 1; height: 4px; background-color: #e0e0e0; border-radius: 2px; margin: 0 10px; cursor: pointer;" 
+                //             onclick="seekAudio('audio-${messageId}', this)">
+                //             <div style="height: 100%; width: 0%; background-color: #248232;"></div>
+                //             </div>
+                //             <div style="font-size: 12px; color: white;">${duracaoFormatada}</div>
+                //         </div>
+                //         `;
+                //     }
         
-                    if (mensagem.arquivo) {
-                        messageContent += `
-                        <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px; cursor: pointer;">
-                            <div style="margin-right: 10px; font-size: 24px;">
-                            ${getFileIcon(mensagem.arquivo.tipo)}
-                            </div>
-                            <div>
-                            <strong>${mensagem.arquivo.nome}</strong>
-                            <div style="font-size: 12px; color: white;">
-                                ${formatFileSize(mensagem.arquivo.tamanho || 0)}
-                            </div>
-                            </div>
-                            <a href="${mensagem.arquivo.url}" target="_blank" download="${mensagem.arquivo.nome}" 
-                            style="margin-left: auto; color: white; text-decoration: none;">
-                            <i class="fa-solid fa-download"></i> Baixar
-                            </a>
-                        </div>
-                        `;
-                    }
+                //     if (mensagem.arquivo) {
+                //         messageContent += `
+                //         <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px; cursor: pointer;">
+                //             <div style="margin-right: 10px; font-size: 24px;">
+                //             ${getFileIcon(mensagem.arquivo.tipo)}
+                //             </div>
+                //             <div>
+                //             <strong>${mensagem.arquivo.nome}</strong>
+                //             <div style="font-size: 12px; color: white;">
+                //                 ${formatFileSize(mensagem.arquivo.tamanho || 0)}
+                //             </div>
+                //             </div>
+                //             <a href="${mensagem.arquivo.url}" target="_blank" download="${mensagem.arquivo.nome}" 
+                //             style="margin-left: auto; color: white; text-decoration: none;">
+                //             <i class="fa-solid fa-download"></i> Baixar
+                //             </a>
+                //         </div>
+                //         `;
+                //     }
         
-                    if (mensagem.texto) {
-                        messageContent += `<div style="white-space: pre-wrap;">${mensagem.texto}</div>`;
-                    }
+                //     if (mensagem.texto) {
+                //         messageContent += `<div style="white-space: pre-wrap;">${mensagem.texto}</div>`;
+                //     }
         
-                    messageContent += `<div style="text-align:right; font-size:small;">${timeString}</div>`;
-                    div.innerHTML = messageContent;
+                //     // messageContent += `<div style="text-align:right; font-size:small;">${timeString}</div>`;
+                //     div.innerHTML = messageContent;
         
-                    const optionsButton = document.createElement("div");
-                    optionsButton.innerHTML = "⋮";
-                    optionsButton.style.cursor = "pointer";
-                    optionsButton.style.fontSize = "16px";
-                    optionsButton.style.padding = "3px";
-                    optionsButton.style.position = "absolute";
-                    optionsButton.style.right = "0";
-                    optionsButton.style.bottom = "-18px";
+                //     const optionsButton = document.createElement("div");
+                //     optionsButton.innerHTML = "⋮";
+                //     optionsButton.style.cursor = "pointer";
+                //     optionsButton.style.fontSize = "16px";
+                //     optionsButton.style.padding = "3px";
+                //     optionsButton.style.position = "absolute";
+                //     optionsButton.style.right = "0";
+                //     optionsButton.style.bottom = "-18px";
         
-                    const menuId = `menu-${messageId}`;
-                    const menuOpcoes = document.createElement("div");
-                    menuOpcoes.id = menuId;
-                    menuOpcoes.className = "menu-opcoes";
-                    menuOpcoes.style.position = "absolute";
-                    menuOpcoes.style.right = "0";
-                    menuOpcoes.style.bottom = "-40px";
-                    menuOpcoes.style.backgroundColor = "white";
-                    menuOpcoes.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
-                    menuOpcoes.style.padding = "5px";
-                    menuOpcoes.style.borderRadius = "3px";
-                    menuOpcoes.style.zIndex = "1000";
-                    menuOpcoes.style.display = "none";
+                //     const menuId = `menu-${messageId}`;
+                //     const menuOpcoes = document.createElement("div");
+                //     menuOpcoes.id = menuId;
+                //     menuOpcoes.className = "menu-opcoes";
+                //     menuOpcoes.style.position = "absolute";
+                //     menuOpcoes.style.right = "0";
+                //     menuOpcoes.style.bottom = "-40px";
+                //     menuOpcoes.style.backgroundColor = "white";
+                //     menuOpcoes.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
+                //     menuOpcoes.style.padding = "5px";
+                //     menuOpcoes.style.borderRadius = "3px";
+                //     menuOpcoes.style.zIndex = "1000";
+                //     menuOpcoes.style.display = "none";
         
-                    const excluirOpcao = document.createElement("div");
-                    excluirOpcao.textContent = "Excluir";
-                    excluirOpcao.style.padding = "5px 10px";
-                    excluirOpcao.style.cursor = "pointer";
-                    excluirOpcao.style.color = "red";
-                    excluirOpcao.style.margin = "0 auto";
+                //     const excluirOpcao = document.createElement("div");
+                //     excluirOpcao.textContent = "Excluir";
+                //     excluirOpcao.style.padding = "5px 10px";
+                //     excluirOpcao.style.cursor = "pointer";
+                //     excluirOpcao.style.color = "red";
+                //     excluirOpcao.style.margin = "0 auto";
         
-                    excluirOpcao.onclick = (e) => {
-                        e.stopPropagation();
-                        if (mensagem.audio && mensagem.audio.url) {
-                            excluirAudio(messageId, mensagem.audio.url);
-                        } else if (mensagem.arquivo) {
-                            excluirArquivo(messageId, mensagem.arquivo.url);
-                        } else if (mensagem.video) {
-                            excluirVideo(messageId, mensagem.video);
-                        } else if (mensagem.imagem) {
-                            excluirImagem(messageId, mensagem.imagem);
-                        } else {
-                            excluirMensagem(messageId);
-                        }
-                    };
+                //     excluirOpcao.onclick = (e) => {
+                //         e.stopPropagation();
+                //         if (mensagem.audio && mensagem.audio.url) {
+                //             excluirAudio(messageId, mensagem.audio.url);
+                //         } else if (mensagem.arquivo) {
+                //             excluirArquivo(messageId, mensagem.arquivo.url);
+                //         } else if (mensagem.video) {
+                //             excluirVideo(messageId, mensagem.video);
+                //         } else if (mensagem.imagem) {
+                //             excluirImagem(messageId, mensagem.imagem);
+                //         } else {
+                //             excluirMensagem(messageId);
+                //         }
+                //     };
         
-                    optionsButton.onclick = () => toggleMenuOpcoes(menuId);
+                //     optionsButton.onclick = () => toggleMenuOpcoes(menuId);
         
-                    menuOpcoes.appendChild(excluirOpcao);
-                    messageWrapper.appendChild(div);
-                    messageWrapper.appendChild(optionsButton);
-                    messageWrapper.appendChild(menuOpcoes);
-                    mensagemContainer.appendChild(messageWrapper);
+                //     menuOpcoes.appendChild(excluirOpcao);
+                //     messageWrapper.appendChild(div);
+                //     messageWrapper.appendChild(optionsButton);
+                //     messageWrapper.appendChild(menuOpcoes);
+                //     mensagemContainer.appendChild(messageWrapper);
         
-                    messageWrapper.addEventListener("dblclick", function(e) {
-                        iniciarSelecao(this, messageId);
-                        e.stopPropagation();
-                    });
+                //     messageWrapper.addEventListener("dblclick", function(e) {
+                //         iniciarSelecao(this, messageId);
+                //         e.stopPropagation();
+                //     });
         
-                    messageWrapper.addEventListener("click", function(e) {
-                        if (modoSelecao) {
-                        toggleSelecaoMensagem(this, messageId);
-                        e.stopPropagation();
-                        }
-                    });
-                    } else {
+                //     messageWrapper.addEventListener("click", function(e) {
+                //         if (modoSelecao) {
+                //         toggleSelecaoMensagem(this, messageId);
+                //         e.stopPropagation();
+                //         }
+                //     });
+                //     } else {
         
-                    div.style.backgroundColor = "gray";
-                    div.style.color = "white";
-                    div.style.marginRight = "auto";
+                //     div.style.backgroundColor = "gray";
+                //     div.style.color = "white";
+                //     div.style.marginRight = "auto";
                     
-                    getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", otherUser.current!.uid))).then(results=>{
-                        const userAmigo = results.docs[0].data();
-                        img.src = userAmigo.fotoPerfil ? getDriveURL(userAmigo.fotoPerfil) : avatar_src;
-                        const timeString = formatTime(date);
+                //     getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", otherUser.current!.uid))).then(results=>{
+                //         const userAmigo = results.docs[0].data();
+                //         img.src = userAmigo.fotoPerfil ? getDriveURL(userAmigo.fotoPerfil) : avatar_src;
+                //         // const timeString = formatTime(date);
         
-                        let messageContent = "";
+                //         let messageContent = "";
         
-                        if (mensagem.imagem) {
-                            messageContent += `
-                            <div style="margin: 5px 0;">
-                                <img src="${mensagem.imagem}" style="max-width: 250px; max-height: 250px; border-radius: 10px; cursor: pointer;" 
-                                onclick="abrirImagemModal('${mensagem.imagem}')">
-                            </div>
-                            `;
-                        }
+                //         if (mensagem.imagem) {
+                //             messageContent += `
+                //             <div style="margin: 5px 0;">
+                //                 <img src="${mensagem.imagem}" style="max-width: 250px; max-height: 250px; border-radius: 10px; cursor: pointer;" 
+                //                 onclick="abrirImagemModal('${mensagem.imagem}')">
+                //             </div>
+                //             `;
+                //         }
         
-                        if (mensagem.video) {
-                            messageContent += `
-                            <div style="margin: 5px 0;">
-                                <video src="${mensagem.video}" controls style="max-width: 250px; max-height: 250px; border-radius: 10px;"></video>
-                            </div>
-                            `;
-                        }
+                //         if (mensagem.video) {
+                //             messageContent += `
+                //             <div style="margin: 5px 0;">
+                //                 <video src="${mensagem.video}" controls style="max-width: 250px; max-height: 250px; border-radius: 10px;"></video>
+                //             </div>
+                //             `;
+                //         }
         
-                        if (mensagem.audio && mensagem.audio.url) {
-                            const duracao = mensagem.audio.duracao || 0;
-                            const minutos = Math.floor(duracao / 60);
-                            const segundos = duracao % 60;
-                            const duracaoFormatada = `${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
+                //         if (mensagem.audio && mensagem.audio.url) {
+                //             const duracao = mensagem.audio.duracao || 0;
+                //             const minutos = Math.floor(duracao / 60);
+                //             const segundos = duracao % 60;
+                //             const duracaoFormatada = `${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
         
-                            messageContent += `
-                            <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px;">
-                                <audio id="audio-${messageId}" src="${mensagem.audio.url}" preload="auto"></audio>
-                                <button onclick="togglePlayPause('audio-${messageId}', 'play-btn-${messageId}')" 
-                                id="play-btn-${messageId}" style="background: none; border: none; font-size: 20px; color: green; cursor: pointer;">
-                                <i class="fa-solid fa-play"></i>
-                                </button>
-                                <div style="flex-grow: 1; height: 4px; background-color: #e0e0e0; border-radius: 2px; margin: 0 10px; cursor: pointer;" 
-                                onclick="seekAudio('audio-${messageId}', this)">
-                                <div style="height: 100%; width: 0%; background-color: #248232;"></div>
-                                </div>
-                                <div style="font-size: 12px; color: white;">${duracaoFormatada}</div>
-                            </div>
-                            `;
-                        }
+                //             messageContent += `
+                //             <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px;">
+                //                 <audio id="audio-${messageId}" src="${mensagem.audio.url}" preload="auto"></audio>
+                //                 <button onclick="togglePlayPause('audio-${messageId}', 'play-btn-${messageId}')" 
+                //                 id="play-btn-${messageId}" style="background: none; border: none; font-size: 20px; color: green; cursor: pointer;">
+                //                 <i class="fa-solid fa-play"></i>
+                //                 </button>
+                //                 <div style="flex-grow: 1; height: 4px; background-color: #e0e0e0; border-radius: 2px; margin: 0 10px; cursor: pointer;" 
+                //                 onclick="seekAudio('audio-${messageId}', this)">
+                //                 <div style="height: 100%; width: 0%; background-color: #248232;"></div>
+                //                 </div>
+                //                 <div style="font-size: 12px; color: white;">${duracaoFormatada}</div>
+                //             </div>
+                //             `;
+                //         }
         
-                        if (mensagem.arquivo) {
-                            messageContent += `
-                            <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px; cursor: pointer;">
-                                <div style="margin-right: 10px; font-size: 24px;">
-                                ${getFileIcon(mensagem.arquivo.tipo)}
-                                </div>
-                                <div>
-                                <strong>${mensagem.arquivo.nome}</strong>
-                                <div style="font-size: 12px; color: white;">
-                                    ${formatFileSize(mensagem.arquivo.tamanho || 0)}
-                                </div>
-                                </div>
-                                <a href="${mensagem.arquivo.url}" target="_blank" download="${mensagem.arquivo.nome}" 
-                                style="margin-left: auto; color: white; text-decoration: none;">
-                                <i class="fa-solid fa-download"></i> Baixar
-                                </a>
-                            </div>
-                            `;
-                        }
+                //         if (mensagem.arquivo) {
+                //             messageContent += `
+                //             <div style="margin: 5px 0; display: flex; align-items: center; background-color: #1b5c2438; border-radius: 10px; padding: 8px; cursor: pointer;">
+                //                 <div style="margin-right: 10px; font-size: 24px;">
+                //                 ${getFileIcon(mensagem.arquivo.tipo)}
+                //                 </div>
+                //                 <div>
+                //                 <strong>${mensagem.arquivo.nome}</strong>
+                //                 <div style="font-size: 12px; color: white;">
+                //                     ${formatFileSize(mensagem.arquivo.tamanho || 0)}
+                //                 </div>
+                //                 </div>
+                //                 <a href="${mensagem.arquivo.url}" target="_blank" download="${mensagem.arquivo.nome}" 
+                //                 style="margin-left: auto; color: white; text-decoration: none;">
+                //                 <i class="fa-solid fa-download"></i> Baixar
+                //                 </a>
+                //             </div>
+                //             `;
+                //         }
         
-                        if (mensagem.texto) {
-                            messageContent += `<div>${mensagem.texto}</div>`;
-                        }
+                //         if (mensagem.texto) {
+                //             messageContent += `<div>${mensagem.texto}</div>`;
+                //         }
         
-                        messageContent += `<div style="text-align:right; font-size:small;">${timeString}</div>`;
-                        div.innerHTML = messageContent;
-                        });
+                //         // messageContent += `<div style="text-align:right; font-size:small;">${timeString}</div>`;
+                //         div.innerHTML = messageContent;
+                //         });
         
-                    mensagemContainer.appendChild(img);
-                    mensagemContainer.appendChild(div);
-                    }
-                    chatMessagesContainer.appendChild(mensagemContainer);
-                }
+                //     mensagemContainer.appendChild(img);
+                //     mensagemContainer.appendChild(div);
+                //     }
+                //     chatMessagesContainer!.appendChild(mensagemContainer);
+                // }
             });
+
+            setMessages(new_messages);
     
             chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
         });
@@ -1050,7 +960,7 @@ function Chats(){
         () => {
             getDownloadURL(uploadTask.snapshot.ref)
             .then((audioUrl) => {
-                const messageText = refs.messageInput.current ? refs.messageInput.current!.value.trim() : "";
+                const messageText = refs.messageInput.current ? refs.messageInput.current!.textContent!.trim() : "";
         
                 const novaMensagem = {
                     remetente: usuarioLogado!.uid,
@@ -1066,7 +976,7 @@ function Chats(){
               return push(dbRef(getDatabase(),`chats/${chatId.current}`), novaMensagem);
             })
             .then(() => {
-                refs.messageInput.current!.value = "";
+                refs.messageInput.current!.textContent! = "";
                 document.body.removeChild(progressBar);
                 marcarMensagensComoLidas();
             })
@@ -1103,7 +1013,7 @@ function Chats(){
             return;
         }
     
-        const messageText = refs.messageInput.current ? refs.messageInput.current!.value.trim() : '';
+        const messageText = refs.messageInput.current ? refs.messageInput.current!.textContent!.trim() : '';
     
         const fileRef = storageRef(getStorage(), `chat_files/${chatId.current}/${usuarioLogado!.uid}_${Date.now()}_${file.name}`);
         
@@ -1130,7 +1040,7 @@ function Chats(){
         
             refs.fileInput.current!.value = '';
             if (refs.messageInput.current) {
-            refs.messageInput.current.value = '';
+            refs.messageInput.current.textContent! = '';
             }
         })
         .catch((error: any) => {
@@ -1156,7 +1066,7 @@ function Chats(){
             return;
         }
         
-        const messageText = refs.messageInput.current ? refs.messageInput.current!.value.trim() : "";
+        const messageText = refs.messageInput.current ? refs.messageInput.current!.textContent!.trim() : "";
         
         const imageRef = storageRef(getStorage(), `chat_images/${chatId.current}/${usuarioLogado!.uid}_${Date.now()}_${file.name}`);
         
@@ -1190,7 +1100,7 @@ function Chats(){
         .then(() => {
             event.target.value = "";
             if (refs.messageInput.current) {
-                refs.messageInput.current!.value = "";
+                refs.messageInput.current!.textContent! = "";
             }
             document.body.removeChild(progressBar);
             marcarMensagensComoLidas();
@@ -1221,7 +1131,7 @@ function Chats(){
             return;
         }
         
-        const messageText = refs.messageInput.current ? refs.messageInput.current!.value.trim() : "";
+        const messageText = refs.messageInput.current ? refs.messageInput.current!.textContent!.trim() : "";
         
         const videoRef = storageRef(getStorage(), `chat_videos/${chatId.current}/${usuarioLogado!.uid}_${Date.now()}_${file.name}`);
         
@@ -1254,7 +1164,7 @@ function Chats(){
         .then(() => {
             event.target.value = "";
             if (refs.messageInput.current) {
-                refs.messageInput.current.value = "";
+                refs.messageInput.current.textContent! = "";
             }
             document.body.removeChild(progressBar);
                 marcarMensagensComoLidas();
@@ -1268,47 +1178,56 @@ function Chats(){
         });
     }
 
-    useEffect(()=>{
-        if (!mobile && location.pathname === "/chat"){
-            atualizarFriendSelect();
+    const scrollToBottom = useCallback(() => {
+        const chatMessagesContainer = document.getElementById("chat-messages");
+        if (chatMessagesContainer) {
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
         }
-    }, [mobile, location.pathname]);
+    },[]);
+
+    const onMessageInput = () => {
+        setMessageInputValue(refs.messageInput.current!.innerText);
+
+    }
+
+    useEffect(()=>{
+        scrollToBottom();
+    },[messageInputValue]);
+
     useEffect(()=>{
         if (!usuarioLogado) return;
 
-        if (location.pathname === "/chat"){
-            const queryParams = new URLSearchParams(location.search);
-            const otherUserId = queryParams.get("id");
-            if (otherUserId){
-                const ids = otherUserId.split("_");
-                const otherId = usuarioLogado.uid === ids[0] ? ids[1] : ids[0];
-                
-                getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", usuarioLogado!.uid))).then(result=>{
-                    myUser.current = result.docs[0].data() as chatUser;
-                });
-                getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", otherId))).then(result=>{
-                    otherUser.current = result.docs[0].data() as chatUser;
+        if (location.pathname.startsWith("/chat")){
+            console.log("ri")
+            chatId.current = Number(location.pathname.split("/")[2]);
+            socket.send("/chat", { operation: "get_messages", id: chatId.current }).then(result=>{
+                console.log(result);
+                if (result.result){
+                    const users = JSON.parse(result.results.users);
+                    const uids = Object.keys(users);
+                    const otherUid = usuarioLogado!.uid == uids[0] ? uids[1] : uids[0];
+                    otherUser.current = {...users[otherUid], uid: otherUid };
+                    myUser.current = {...users[usuarioLogado.uid], uid: usuarioLogado.uid }
                     
-                    chatId.current = otherUserId;
+                    chatId.current = result.results.id;
 
                     const chatBox = document.getElementById("chat-box")!;
 
-                    chatBox.style.display = "block";
+                    chatBox.style.display = "flex";
 
                     carregarMensagens();
 
                     marcarMensagensComoLidas();
 
                     monitorarDigitacao();
-                })
-
-            } else {
-                navigate("/chats");
-            }
+                } else {
+                    navigate("/chats");
+                }
+            });
         } else {
-            atualizarFriendSelect();
+            // atualizarFriendSelect();
         }
-    },[location.pathname, usuarioLogado]);
+    },[location.search, usuarioLogado]);
 
     return <div id="chats-page" className="page">
         {/* <div className="header_logo">
@@ -1319,38 +1238,23 @@ function Chats(){
 
         <h4 ref={respa} className="hidden" id="resultadoPA"></h4>
 
-        <div
-            className="chatdiv"
-            style={{ display: 'flex', justifyContent: 'center' }}
-        >
-            {!mobile || (mobile && location.pathname  == "/chats") ? <section id="history">
-            <div id="top-chats">
-                <span className="icone" aria-hidden="true">
-                    <i
-                    className="fa-solid fa-comment-dots"
-                    aria-hidden="true"
-                    style={{ margin: '0 auto' }}
-                    ></i>
-                </span>
-                <h2 id="label-chats">Conversas</h2>
-            </div>
-            <div id="friendList"></div>
-            </section> : <></>}
+        <div className="chatdiv">
+            {!mobile || (mobile && location.pathname  == "/chats") ? <History chatId={chatId}></History> : <></>}
 
             { !mobile || (mobile && location.pathname == "/chat") ? <section id="chat">
-            <p>
+            {/* <p>
                 <i className="fa-solid fa-lock-open"></i>&nbsp;Sem criptografia no
                 momento
-            </p>
+            </p> */}
+            <div id="user-info">
+                <div id="user-logo">{}</div>
+                <div id="user-name">{}</div>
+            </div>
 
-            <div id="chat-box">
-                <div id="chat-messages"></div>
-                <div
-                id="typingIndicatorContainer"
-                style={{ display: 'none', textAlign: 'center', margin: '10px 0' }}
-                ></div>
-
-                <div id="chat-input">
+            <div id="chat-box" style={{display: "none"}}>
+                <Messages messages={messages} usuarioLogadoId={usuarioLogado ? usuarioLogado!.uid : ""} scrollToBottom={scrollToBottom} onExcluir={useCallback((..._)=>{},[])}></Messages>
+                <div id="typingIndicatorContainer" style={{ display: 'none' }}></div>
+                <div id="chat-input" className={messages.length > 0 ? "loaded" : ""}>
                     <input
                         type="file"
                         ref={refs.fileInput}
@@ -1359,8 +1263,9 @@ function Chats(){
                         style={{ display: 'none' }}
                         onChange={handleFileUpload}
                     />
-                    <textarea ref={refs.messageInput} id="messageInput" placeholder="Digite sua mensagem..."></textarea>
-                    <i onClick={enviarMensagem} className="fa-solid fa-paper-plane send-item" aria-hidden="true"></i>
+                    <div onInput={onMessageInput} contentEditable={true} ref={refs.messageInput} className="message-input"></div>
+                    {(messageInputValue == "" || messageInputValue=="\n") && <div className="message-input is-empty">Digite sua mensagem...</div>}
+                    <i onClick={enviarMensagem} className={"fa-solid fa-paper-plane send-item" + (messageInputValue.trim()=="" ? " disabled": "")} aria-hidden="true"></i>
                     <i onClick={()=>refs.fileInput.current!.click()} className="fa-solid fa-paperclip send-item" aria-hidden="true"></i>
                     <i onClick={iniciarGravacaoAudio} id="audio-record-btn" title="Gravar mensagem voz" className={"fa-solid  attachment-btn send-item " + ( isRecording ? "fa-stop recording" : "fa-microphone" ) }></i>
                 </div>

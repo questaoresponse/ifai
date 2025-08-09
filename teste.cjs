@@ -1,0 +1,17 @@
+async function teste(){
+    console.log("ai")
+    const response = await fetch("https://ifai-cloudfare.eneagonlosamigos.workers.dev/rest/posts", {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer sk83mdnu9KI90KS;~D8UJKDS936NLJj9wo38dv{k0jm",
+            "Content-Type": "application/json"
+        },
+        // body: JSON.stringify({"query": "SELECT * FROM posts LIMIT ?;", params: [5]})
+        // "body:": JSON.stringify({ "query": "INSERT INTO posts(description,image,timestamp,type,user,userUid,id) VALUES(?,?,?,?,?,?,?)", "params": ["EI","ss",11111,0,"sis","jsjsjsj",2] })
+        // "body": JSON.stringify({"description": "aiai", image: "jjjssj",  timestamp: 11111, type: 0, user: "ssd", userUid: "siasis",  id: 1})
+    });
+    const data = await response.json();
+    // const data = await response.json();
+    console.log(data);
+}
+teste();

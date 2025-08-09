@@ -1,11 +1,11 @@
+import os
+import pickle
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 import firebase_admin
 from firebase_admin import credentials, firestore, messaging
 
 def load_creds():
-    import os
-    import pickle
     if os.path.exists('token.pkl'):
         with open('token.pkl', 'rb') as token:
             creds = pickle.load(token)

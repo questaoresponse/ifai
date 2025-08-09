@@ -6,20 +6,22 @@ import "./Sign.scss";
 import logo_src from "./assets/static/ifai2.png";
 import { useGlobal } from "./Global";
 import Alert from "./Alert";
+import auth from "./Auth";
 
 const cursos: { [key: string]: number } = {
-  ISINF: 120,
-  ISSEG: 40,
-  ISADM: 40,
-  ISMEC: 40,
-  TADS: 40,
-  TSEG: 40,
-  ISDEV: 40,
+  ISINF: 140,
+  ISSEG: 50,
+  ISADM: 50,
+  ISMEC: 50,
+  ISL: 50,
+  TADS: 50,
+  TSEG: 50,
+  ISDEV: 50,
 };
 
 function Registro() {
   const showPopup = useRef<(msg: string) => void>(null);
-  const { db, usuarioLogado, setUsuarioLogado } = useGlobal();
+  const { db, worker_server, usuarioLogado, setUsuarioLogado } = useGlobal();
 
   const [incorrectMatricula, setIncorrectMatricula] = useState(false);
   const refs = { matricula: useRef<HTMLInputElement>(null) };
@@ -28,13 +30,13 @@ function Registro() {
     e.preventDefault();
     if (usuarioLogado) return;
 
-    const nome = (document.getElementById("regNome") as HTMLInputElement).value;
+    const name = (document.getElementById("regNome") as HTMLInputElement).value;
     const email = (document.getElementById("regEmail") as HTMLInputElement).value;
     const senha = (document.getElementById("regSenha") as HTMLInputElement).value;
     const id = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     const matricula = refs.matricula.current!.value;
 
-    if (!/^20[0-9]{2}(1|2)(1|2)(1|2)[A-Z]+0(120|1[0-1][0-9]|0[0-9]{2})$/.test(matricula)) {
+    if (!/^20[0-9]{2}(1|2)(1|2)(1|2)[A-Z]+0(140|1[0-3][0-9]|0[0-9]{2})$/.test(matricula)) {
         setIncorrectMatricula(true);
         showPopup.current?.("Matrícula inválida.");
         return;
@@ -43,23 +45,15 @@ function Registro() {
 
     const regex = matricula.match(/11([A-Z]+)0(\d+)$/)!;
     if (regex[1] in cursos && Number(regex[2]) <= cursos[regex[1]]) {
-      createUserWithEmailAndPassword(getAuth(), email, senha)
-        .then((uc) => {
-          const user = uc.user as User;
-          setUsuarioLogado(user);
-          const timestamp = Date.now();
-          addDoc(collection(db.current!, "usuarios"), {
+        auth.post(worker_server + "/registro", {
             email,
             id,
             matricula,
-            nFriends: 0,
-            name_lower: nome.toLowerCase(),
-            nome,
+            name,
             password: senha,
-            timestamp,
-            uid: user.uid,
-            tokens:  JSON.stringify({})
-          });
+          })
+        .then((result) => {
+            setUsuarioLogado(result.data.user);
         })
         .catch((err) => {
           if (!showPopup.current) return;
@@ -77,6 +71,40 @@ function Registro() {
               showPopup.current("Erro ao registrar: " + err.message);
           }
         });
+      // createUserWithEmailAndPassword(getAuth(), email, senha)
+      //   .then((uc) => {
+      //     const user = uc.user as User;
+      //     setUsuarioLogado(user);
+      //     const timestamp = Date.now();
+      //     addDoc(collection(db.current!, "usuarios"), {
+      //       email,
+      //       id,
+      //       matricula,
+      //       nFriends: 0,
+      //       name_lower: nome.toLowerCase(),
+      //       nome,
+      //       password: senha,
+      //       timestamp,
+      //       uid: user.uid,
+      //       tokens:  JSON.stringify({})
+      //     });
+      //   })
+      //   .catch((err) => {
+      //     if (!showPopup.current) return;
+      //     switch (err.code) {
+      //       case "auth/email-already-in-use":
+      //         showPopup.current("E-mail já está em uso.");
+      //         break;
+      //       case "auth/weak-password":
+      //         showPopup.current("A senha é muito fraca.");
+      //         break;
+      //       case "auth/invalid-email":
+      //         showPopup.current("E-mail inválido.");
+      //         break;
+      //       default:
+      //         showPopup.current("Erro ao registrar: " + err.message);
+      //     }
+      //   });
     } else {
       setIncorrectMatricula(true);
     }

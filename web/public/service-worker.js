@@ -49,11 +49,12 @@ self.addEventListener('activate', event => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetchWithRetry(event.request)
-  );
-});
+// self.addEventListener('fetch', (event) => {
+//   event.respondWith(
+//     fetch(event.request)
+//     // fetchWithRetry(event.request)
+//   );
+// });
 
 async function fetchWithRetry(request, retries = 100, delay = 1000) {
 

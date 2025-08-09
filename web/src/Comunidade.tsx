@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { initializeFirebase, formatTime } from "./Functions";
+import { initializeFirebase, formatMessageTime } from "./Functions";
 import {  getDatabase, ref as dbRef, set, get, onValue, remove, update, push, serverTimestamp, query as queryDb, orderByChild } from "firebase/database"
 import { getDownloadURL, deleteObject, getStorage, uploadBytes, uploadBytesResumable, ref as storageRef } from "firebase/storage";
 import type { FirebaseApp } from "firebase/app";
@@ -944,7 +944,7 @@ function Comunidade(){
                     div.style.backgroundColor = '#248232';
                     div.style.color = 'white';
                 
-                    const timeString = formatTime(date);
+                    const timeString = formatMessageTime(date);
                 
                     if (mensagem.imagem) {
                         const imagemContainer = document.createElement('div');
@@ -1291,7 +1291,7 @@ function Comunidade(){
                         img.src = userAmigo.fotoPerfil ? userAmigo.fotoPerfil : avatar_src;
                         img.alt = userAmigo.nome || 'Usuário';
                 
-                        const timeString = formatTime(date);
+                        const timeString = formatMessageTime(date);
                 
                         if (mensagem.imagem) {
                             const imagemElement = document.createElement('img');

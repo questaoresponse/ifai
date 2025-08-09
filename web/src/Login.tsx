@@ -5,9 +5,10 @@ import logo_src from "./assets/static/ifai2.png";
 import { useGlobal } from "./Global";
 import "./Sign.scss";
 import Alert from "./Alert";
+import auth from "./Auth";
 
 function Login(){
-    const { usuarioLogado, setUsuarioLogado } = useGlobal();
+    const { worker_server, usuarioLogado, setUsuarioLogado } = useGlobal();
 
 
     const showPopup = useRef<any>(null);
@@ -16,15 +17,20 @@ function Login(){
     const submit = (e: any) => {
         e.preventDefault();
         const email = (document.getElementById('loginEmail') as any).value;
-        const senha = (document.getElementById('loginSenha') as any).value;
+        const password = (document.getElementById('loginSenha') as any).value;
 
-        signInWithEmailAndPassword(getAuth(), email, senha)
-        .then((user: UserCredential) => {
-            setUsuarioLogado(user.user);
+        auth.post(worker_server + "/login", { email, password }).then(result=>{
+            if (result.data.result){
+                setUsuarioLogado(result.data.user);
+            }
         })
-        .catch(() => {
-            showPopup.current("E-mail ou senha incorreto.");
-        });
+        // signInWithEmailAndPassword(getAuth(), email, senha)
+        // .then((user: UserCredential) => {
+        //     setUsuarioLogado(user.user);
+        // })
+        // .catch(() => {
+        //     showPopup.current("E-mail ou senha incorreto.");
+        // });
     };
 
     return !usuarioLogado ? <>

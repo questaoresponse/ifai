@@ -14,7 +14,8 @@ const cursos: { [key: string]: any } = {
     ISINF: "Integrado em Informática",
     ISSEG: "Integrado em Segurança do Trabalho",
     ISADM: "Integrado em Administração",
-    ISMEC: "Integrado em mecânica",
+    ISMEC: "Integrado em Mecânica",
+    ISL: "Técnico em Logística",
     TADS: "Técnico em ADS",
     TSEG: "Técnico em Segurança do Trabalho",
     ISDEV: "Desenvolvedor",
@@ -35,7 +36,7 @@ interface Perfil {
 }
 
 const Perfil = () => {
-    const { db, server, usuarioLogado } = useGlobal();
+    const { worker_server, socket, db, server, usuarioLogado } = useGlobal();
     const [displayName, setDisplayName] = useState<string>('Carregando...');
     const [nFriends, setNFriends] = useState(0);
     const [avatarSrc, setAvatarSrc] = useState<string>(avatar_src);
@@ -76,9 +77,9 @@ const Perfil = () => {
             }
 
             function carregarPerfil(uid: string) {
-                getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uid))).then(results=>{
-                    if (results.size > 0){
-                        const userData = results.docs[0].data() as Perfil;
+                socket.send("/perfil",{}).then(result=>{
+                    if (result.result){
+                        const userData = result.perfil;
                         setDisplayName(userData.nome || "Usuário");
                         setNFriends(userData.nFriends);
                         setCurrentUser({ ...userData, uid });

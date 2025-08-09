@@ -6,6 +6,7 @@ import { getDriveURL } from "./Functions";
 import avatar_src from "./assets/static/avatar.png";
 import { useGlobal } from "./Global";
 import "./Amigos.scss";
+import auth from "./Auth";
 
 declare global {
   interface Window {
@@ -14,48 +15,59 @@ declare global {
   }
 }
 
-interface friendsInterface{
-    nome: string,
-    fotoPerfil: string,
-    id: string
+interface friendInterface{
+    name: string,
+    logo: string,
+    uid: string,
+    mode: string
 }
 
 function Amigos(){
-    const { db, usuarioLogado } = useGlobal();
+    const { socket, db, usuarioLogado, refs:{ respa } } = useGlobal();
 
     const navigate = useNavigate();
 
-    const [ friends, setFriends ] = useState<friendsInterface[]>([]);
-    const [ solicitantes, setSolicitantes ] = useState<any[]>([]);
+    const [ friends, setFriends ] = useState<friendInterface[]>([]);
+    const [ solicitantes, setSolicitantes ] = useState<friendInterface[]>([]);
     const [ currentPage, setCurrentPage ] = useState<number>(0);
-    const [ alunos, setAlunos ] = useState<any[] | null>(null);
+    const [ alunos, setAlunos ] = useState<friendInterface[] | null>(null);
 
     const refs = {
         searchAlunos: useRef<HTMLInputElement>(null)
     }
     
-    const carregarAmigos = () => {   
-        get(dbRef(getDatabase(),`friends/${usuarioLogado!.uid}`)).then( async (snapshot) => {
-            const friends: friendsInterface[] = [];
-            for (const uidAmigo in snapshot.val()){
-                const results = await getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uidAmigo)));
-                const userAmigo = results.docs[0].data();
-                friends.push({ fotoPerfil: userAmigo.fotoPerfil ? getDriveURL(userAmigo.fotoPerfil) : avatar_src, nome: userAmigo.nome, id: uidAmigo });
-            };
-            setFriends(friends);
-        });
-        onValue(dbRef(getDatabase(),`friendRequests/${usuarioLogado!.uid}`), async (snapshot) => {
-    
-            if (snapshot.exists()) {
-                const newSolicitantes: any[] = [];
-                for (const uidSolicitante in snapshot.val()){
-                    const results = await getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uidSolicitante)));
-                    const userAmigo = results.docs[0].data();
-                    newSolicitantes.push({ ...userAmigo, fotoPerfil: getDriveURL(userAmigo.fotoPerfil) });
-                }
-                setSolicitantes(newSolicitantes);
+    const carregarAmigos = () => {
+        socket.send("/friends", { operation: "get" }).then(result=>{
+            if (result.result){
+                setFriends(result.results.map((friend: friendInterface)=>{ return {...friend, logo: friend.logo ? getDriveURL(friend.logo) : avatar_src }}))
             }
         });
+        socket.send("/friends", { operation: "get_requests" }).then(result=>{
+            if (result.result){
+                setSolicitantes(result.results.map((friend: friendInterface)=>{ return {...friend, logo: friend.logo ? getDriveURL(friend.logo) : avatar_src }}))
+            }
+        });
+        // get(dbRef(getDatabase(),`friends/${usuarioLogado!.uid}`)).then( async (snapshot) => {
+        //     const friends: friendsInterface[] = [];
+        //     for (const uidAmigo in snapshot.val()){
+        //         const results = await getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uidAmigo)));
+        //         const userAmigo = results.docs[0].data();
+        //         friends.push({ fotoPerfil: userAmigo.fotoPerfil ? getDriveURL(userAmigo.fotoPerfil) : avatar_src, nome: userAmigo.nome, id: uidAmigo });
+        //     };
+        //     setFriends(friends);
+        // });
+        // onValue(dbRef(getDatabase(),`friendRequests/${usuarioLogado!.uid}`), async (snapshot) => {
+    
+        //     if (snapshot.exists()) {
+        //         const newSolicitantes: any[] = [];
+        //         for (const uidSolicitante in snapshot.val()){
+        //             const results = await getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", uidSolicitante)));
+        //             const userAmigo = results.docs[0].data();
+        //             newSolicitantes.push({ ...userAmigo, fotoPerfil: getDriveURL(userAmigo.fotoPerfil) });
+        //         }
+        //         setSolicitantes(newSolicitantes);
+        //     }
+        // });
     }
 
     const buscarAmigos = async () => {
@@ -66,36 +78,41 @@ function Amigos(){
             return;
         }
         
-        get(dbRef(getDatabase(),`friends/${usuarioLogado!.uid}`)).then(async (snapshot) => {
-            const friends: friendsInterface[] = [];
+        get(dbRef(getDatabase(), `friends/${usuarioLogado!.uid}`)).then(async (snapshot) => {
+            const friends: friendInterface[] = [];
             for (const uidAmigo in snapshot.val()){
                 const response =  await new Promise((r,_)=>{
                     get(dbRef(getDatabase(), "usuarios/" + uidAmigo)).then((snap) => {
                         const userAmigo = snap.val();
                         if (userAmigo.nome.toLowerCase().includes(termo)) {
-                            r({ fotoPerfil: userAmigo.fotoPerfil ? userAmigo.fotoPerfil : avatar_src, nome: userAmigo.nome, id: userAmigo.identificador });
+                            r({ fotoPerfil: userAmigo.fotoPerfil ? userAmigo.fotoPerfil : avatar_src, nome: userAmigo.nome, id: userAmigo.uidentificador });
                         }
                         r(null);
                     });
                 });
-                if (response) friends.push(response as friendsInterface);
+                if (response) friends.push(response as friendInterface);
             };
-            setFriends(friends);
         });
     }
 
     function removerAmigo(uidAmigo: string) {
         if (!usuarioLogado) return;
-        const userDbRef = collection(db.current!, 'usuarios');
-        getDocs(query(userDbRef, where("uid", "in", [usuarioLogado!.uid, uidAmigo]))).then(results=>{
-            results.forEach(result=>{
-                updateDoc(result.ref, { nFriends: result.data().nFriends + 1 });
-            })
+        socket.send("/friends", { operation: "remove_friend", uid_to_remove_friend: uidAmigo }).then(result=>{
+            if (result.result){
+                setFriends(friends=>[...friends.filter(friend=>uidAmigo!=friend.uid)]);
+                setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidAmigo == aluno.uid ? "unsolicited" : aluno.mode }})]);
+            }
         });
-        remove(dbRef(getDatabase(),`friends/${usuarioLogado.uid}/${uidAmigo}`));
-        remove(dbRef(getDatabase(),`friends/${uidAmigo}/${usuarioLogado.uid}`)).then(() => {
-            carregarAmigos();
-        });
+        // const userDbRef = collection(db.current!, 'usuarios');
+        // getDocs(query(userDbRef, where("uid", "in", [usuarioLogado!.uid, uidAmigo]))).then(results=>{
+        //     results.forEach(result=>{
+        //         updateDoc(result.ref, { nFriends: result.data().nFriends + 1 });
+        //     })
+        // });
+        // remove(dbRef(getDatabase(),`friends/${usuarioLogado.uid}/${uidAmigo}`));
+        // remove(dbRef(getDatabase(),`friends/${uidAmigo}/${usuarioLogado.uid}`)).then(() => {
+        //     carregarAmigos();
+        // });
     }
 
     const buscarAlunos = () => {
@@ -110,125 +127,83 @@ function Amigos(){
             setAlunos(null);
             return;
         }
-    
-        getDocs(query(
-            collection(db.current!, "usuarios"),
-            orderBy("name_lower"),
-            startAt(termo),
-            endAt(termo+"\uf8ff")
-        )).then(async (results) => {
 
+        socket.send("/friends", { operation: "search", term: termo }).then(async result=>{
+            console.log(result);
             const alunos: any[] = [];
-            for (const aluno of results.docs){
-                const user = aluno.data();
-                const uid = user.uid;
+            for (const user of result.results){
+                
+                // modes:
+                // 1: amigos
+                // 0: sended_request
+                // -1 not_requested
 
+                const [ uid1, mode_number ] = user.friend_info ? JSON.parse(user.friend_info) : [ "", -1];
+                const uid = user.uid;
                 if ( uid != usuarioLogado.uid ){
-                    var mode = "";
-            
-                    const friendSnapshot = await get(dbRef(getDatabase(), `friends/${usuarioLogado!.uid}/${uid}`));
-                    if (friendSnapshot.exists()) {
-                            mode = "friend";
+                    var mode;
+                    if (mode_number == -1){
+                        mode = "unsolicited";
                     } else {
-                        const requestSnapshot = await get(dbRef(getDatabase(), `friendRequests/${uid}/${usuarioLogado!.uid}`));
-                        if (requestSnapshot.exists()) {
-                            mode = "sended_request";
-                        } else {
-                            const receivedRequestSnapshot = await get(dbRef(getDatabase(), `friendRequests/${usuarioLogado!.uid}/${uid}`));
-                            mode = receivedRequestSnapshot.exists() ? "received_request" : "unsolicited";
-                        }
+                        mode = mode_number == 1 ? "friend" : uid1 == usuarioLogado!.uid ? "sended_request" : "received_request";
                     }
-                    alunos.push({ fotoPerfil: user.fotoPerfil ? getDriveURL(user.fotoPerfil) : avatar_src, nome: user.nome, mode, id: uid });
+
+                    alunos.push({ logo: user.logo ? getDriveURL(user.logo) : avatar_src, name: user.name, mode, uid });
                 }
             }
             setAlunos(alunos);
-            // "Nenhum aluno encontrado."
-        });
-    }
-
-    function rejeitarPedido(uidSolicitante: any) {
-        if (!usuarioLogado) return;
-        remove(dbRef(getDatabase(),`friendRequests/${usuarioLogado!.uid}/${uidSolicitante}`)).then(() => {
-            carregarAmigos();
         });
     }
 
     function enviarPedido(uidDestino:any) {
         if (!usuarioLogado) return;
-        get(dbRef(getDatabase(),`friendRequests/${uidDestino}/${usuarioLogado!.uid}`)).then((snapshot:any) => {
-            if (snapshot.exists()) {
-                // refs.respa.current!.classList.add("erro");
-                // refs.respa.current!.classList.remove("hidden");
-                // refs.respa.current!.innerText = "Pedido já enviado.";
-            } else {
-                set(dbRef(getDatabase(), `friendRequests/${uidDestino}/${usuarioLogado!.uid}`), true).then(() => {
-                    // refs.respa.current!.classList.add("sucesso");
-                    // refs.respa.current!.classList.remove("hidden");
-                    // refs.respa.current!.innerText = "Pedido enviado!";
-                    // setTimeout(function() {
-                    //     refs.respa.current!.classList.add("hidden");
-                    //     refs.respa.current!.classList.remove("sucesso");
-                    //     refs.respa.current!.innerText = "";
-                    // }, 3000);
-
-                    // const btn = document.querySelector(
-                    // `button[data-uid="${uidDestino}"]`,
-                    // ) as any;
-                    // if (btn) {
-                    //     btn.innerText = "Retirar solicitação";
-                    //     btn.onclick = () => retirarPedido(uidDestino);
-                    // }
-                    carregarAmigos();
-                });
+        if (uidDestino == "") return;
+        socket.send("/friends", { operation: "send_request", uid_to_send_request:  uidDestino }).then(result=>{
+            if (result.result){
+                setSolicitantes(solicitantes=>[...solicitantes.map(solicitante=>{ return {...solicitante, mode: uidDestino == solicitante.uid ? "sended_request" : solicitante.mode }})]);
+                setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidDestino == aluno.uid ? "sended_request" : aluno.mode }})]);
             }
         });
     }
 
-    // function retirarPedido(uidDestino: any) {
-    //     if (!usuarioLogado) return;
-    //     remove(dbRef(getDatabase(),`friendRequests/${uidDestino}/${usuarioLogado!.uid}`)).then(() => {
-    //         const btn = document.querySelector(`button[data-uid="${uidDestino}"]`) as any;
-    //         if (btn) {
-    //             btn.innerText = "Adicionar";
-    //             btn.onclick = () => enviarPedido(uidDestino);
-    //         }
-    //     });
-    // }
+    function retirarPedido(uidDestino: any) {
+        if (!usuarioLogado) return;
+        socket.send("/friends", { operation: "remove_send_request", uid_to_remove_send_request: uidDestino }).then(result=>{
+            if (result.result){
+                carregarAmigos();
+                setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidDestino == aluno.uid ? "unsolicited" : aluno.mode }})]);
+            }
+        })
+    }
 
-  function aceitarPedido(uidSolicitante: string) {
-    if (!usuarioLogado) return;
+    function aceitarPedido(uidSolicitante: string) {
+        if (!usuarioLogado) return;
+        socket.send("/friends", { operation: "accept_request", uid_to_accept_request: uidSolicitante }).then(result=>{
+            if (result.result){
+                setSolicitantes(solicitantes=>[...solicitantes.filter(solicitante=>{
+                    if (solicitante.uid == uidSolicitante){
+                        setFriends([...friends, {...solicitante, mode: "friends"}]);
+                        setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidSolicitante == aluno.uid ? "friends" : aluno.mode }})]);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                })]);
+            }
+        })
+    }
 
-    // Evita aceitar múltiplas vezes (lock temporário)
-    const alreadyAccepting = localStorage.getItem(`accepting-${uidSolicitante}`);
-    if (alreadyAccepting) return;
-    localStorage.setItem(`accepting-${uidSolicitante}`, "1");
-
-    // Adiciona como amigo para ambos
-    const updates = [
-        set(dbRef(getDatabase(), `friends/${usuarioLogado!.uid}/${uidSolicitante}`), true),
-        set(dbRef(getDatabase(), `friends/${uidSolicitante}/${usuarioLogado!.uid}`), true)
-    ];
-
-    // Atualiza contadores de amigos
-    const userDbRef = collection(db.current!, "usuarios");
-    getDocs(query(userDbRef, where("uid", "in", [usuarioLogado!.uid, uidSolicitante]))).then((results) => {
-        results.forEach((result) => {
-            updateDoc(result.ref, {
-                nFriends: result.data().nFriends + 1
-            });
+    function rejeitarPedido(uidSolicitante: any) {
+        if (!usuarioLogado) return;
+        socket.send("/friends", { operation: "decline_request", uid_to_decline_request:  uidSolicitante }).then(result=>{
+            if (result.result){
+                carregarAmigos();
+                setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidSolicitante == aluno.uid ? "unsolicited" : aluno.mode }})]);
+            }
+            // remove(dbRef(getDatabase(),`friendRequests/${usuarioLogado!.uid}/${uidSolicitante}`)).then(() => {
+        //     carregarAmigos();
         });
-    });
-
-    // Remove pedido e atualiza lista de solicitantes
-    Promise.all(updates).then(() => {
-        remove(dbRef(getDatabase(), `friendRequests/${usuarioLogado!.uid}/${uidSolicitante}`)).then(() => {
-            setSolicitantes((prev) =>
-                prev.filter((solicitante) => solicitante.uid !== uidSolicitante)
-            );
-            localStorage.removeItem(`accepting-${uidSolicitante}`);
-        });
-    });
-}
+    }
 
     useEffect(()=>{
         const query = new URLSearchParams(location.search);
@@ -292,10 +267,10 @@ function Amigos(){
                     <br />
                     <div id="friendsList" style={{ minHeight: "100px" }}>{friends.map((friend, index: number)=>{
                         return <div className="friend-item" style={{ display: "flex", alignItems: "center", marginBottom: "10px "}} key={index}>
-                            <img src={friend.fotoPerfil} alt={"Foto de " + friend.nome} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
-                            <strong>{friend.nome}</strong>
-                            <button id="go-to-friend-perfil" onClick={()=>navigate(`/perfil?id=${friend.id}`)}>Ver Perfil</button>
-                            <button id="remove-friend" onClick={()=>removerAmigo(friend.id)}>Remover</button>
+                            <img src={friend.logo} alt={"Foto de " + friend.name} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
+                            <strong>{friend.name}</strong>
+                            <button id="go-to-friend-perfil" onClick={()=>navigate(`/perfil?id=${friend.uid}`)}>Ver Perfil</button>
+                            <button id="remove-friend" onClick={()=>removerAmigo(friend.uid)}>Remover</button>
                         </div>
                     })}</div>
                 </section>
@@ -305,49 +280,49 @@ function Amigos(){
                     </div>
                     <div id="friendRequests" className="PA" style={{ minHeight: "50px" }}>{solicitantes.map((friend, index: number)=>{
                         return <div className="friend-item" style={{ display: "flex", alignItems: "center", marginBottom: "10px "}} key={index}>
-                            <img src={friend.fotoPerfil} alt={"Foto de " + friend.nome} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
-                            <strong>{friend.nome}</strong>
+                            <img src={friend.logo} alt={"Foto de " + friend.name} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
+                            <strong>{friend.name}</strong>
                             <button
-                            id="aceitar-pedido"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                aceitarPedido(friend.uid);
-                            }}
-                        >
-                            Aceitar
-                        </button>
-                        <button
-                            id="rejeitar-pedido"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                rejeitarPedido(friend.id);
-                            }}
-                        >
-                            Recusar
-                        </button>
+                                id="aceitar-pedido"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    aceitarPedido(friend.uid);
+                                }}
+                            >
+                                Aceitar
+                            </button>
+                            <button
+                                id="rejeitar-pedido"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    rejeitarPedido(friend.uid);
+                                }}
+                            >
+                                Recusar
+                            </button>
 
                         </div>
                     })}
                     </div>
                 </section>
-                <section id="amigos" style={{ display: currentPage === 2 ? "block" : "none" }}>
+                <section id="search-amigos" style={{ display: currentPage === 2 ? "block" : "none" }}>
                     <input ref={refs.searchAlunos} onInput={buscarAlunos}></input>
                     <div id="searchResults">{alunos ? alunos.length == 0 ? <div>Nenhum usuário encontrado.</div> : alunos.map((aluno, index: number)=>{
                         return <div className="friends-item" key={index}>
-                            <Link className="friends-link" to={ "/perfil?id=" + aluno.id }>
-                                <img src={aluno.fotoPerfil} alt={"Foto de " + aluno.nome}></img>
-                                <strong>{aluno.nome}</strong>
+                            <Link className="friends-link" to={ "/perfil?id=" + aluno.uid }>
+                                <img src={aluno.logo} alt={"Foto de " + aluno.name}></img>
+                                <strong>{aluno.name}</strong>
                             </Link>
                             { aluno.mode == "friend" ? 
                                 <span>(Amigos)</span>
                             : aluno.mode == "sended_request" ?
-                                <button className="retirar" onClick={()=>{rejeitarPedido(aluno.uid); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "unsolicited" } : alunoValue))}}>Cancelar</button>
+                                <button className="retirar" onClick={()=>retirarPedido(aluno.uid)}>Cancelar</button>
                             : aluno.mode == "received_request" ?
                                 <>
-                                    <button className="aceitar" onClick={()=>{aceitarPedido(aluno.id); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "friend" } : alunoValue))}}>Aceitar</button>
-                                    <button className="rejeitar"onClick={()=>rejeitarPedido(aluno.id)}>Rejeitar</button>
+                                    <button className="aceitar" onClick={()=>aceitarPedido(aluno.uid)}>Aceitar</button>
+                                    <button className="rejeitar"onClick={()=>rejeitarPedido(aluno.uid)}>Rejeitar</button>
                                 </>
-                            : <i className="fa-solid fa-user-plus" onClick={()=>{enviarPedido(aluno.id); setAlunos(alunos=>alunos!.map(alunoValue=>alunoValue.id == aluno.id ? { ...alunoValue, mode: "sended_request" } : alunoValue))}}></i>
+                            : <i className="fa-solid fa-user-plus" onClick={()=>enviarPedido(aluno.uid)}></i>
                             }
                         </div>
                         }) : <></> }

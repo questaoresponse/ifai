@@ -28,8 +28,6 @@ messaging.onBackgroundMessage(payload => {
 self.addEventListener('notificationclick', event => {
   event.notification.close(); // fecha a notificação
 
-  // Abre uma janela/aba com a URL desejada
-  console.log(event.notification.data)
   event.waitUntil(
     clients.openWindow(event.notification.data?.url || 'https://ifai-phwn.onrender.com') // substitua pela URL que quiser
   );

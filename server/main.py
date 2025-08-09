@@ -1,20 +1,29 @@
-from flask import Flask, send_file, send_from_directory, request, jsonify, make_response
-from flask_cors import CORS
-import io
-from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
+
+import asyncio
+import json
 import os
 import time
-import requests
-import asyncio
-from threading import Thread
+import io
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
+import httpx
+from quart import Quart, send_file, send_from_directory, request, jsonify, make_response
+from quart_cors import cors
+import socketio
+import uvicorn
 from init import get_drive_service, get_firebase_db, get_messaging
-import json
 
 # import smtplib
 # import dns.resolver
 
-app = Flask(__name__)
-CORS(app)
+io = socketio.AsyncServer(
+    async_mode='asgi',
+    cors_allowed_origins='*',
+    ping_interval = 10,
+    ping_timeout = 5
+)
+app = Quart(__name__)
+app = cors(app, allow_origin="http://localhost:5173", allow_credentials=True)  # ou use um domínio específico
+asgi_app = socketio.ASGIApp(io, app)
 
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -405,26 +414,26 @@ def logout():
     else:
         return jsonify({ "result": True })
 
-async def loop():
+async def keep_alive_loop():
     while True:
         await asyncio.sleep(10)
         try:
-            requests.get("https://ifai-phwn.onrender.com")
-        except Exception as e:
+            async with httpx.AsyncClient() as client:
+                await client.get("https://ifai-phwn.onrender.com")
+        except:
             pass
 
-def run_flask():
-    app.run("0.0.0.0", port=5174)
-    
+# Inicializa tudo no modo assíncrono
 async def main():
-    asyncio.create_task(loop())
-    flask_thread = Thread(target=run_flask)
-    flask_thread.start()
-    try:
-        await loop()
-    except asyncio.CancelledError:
-        os._exit(0)
+    # Cria a tarefa do loop de keep-alive
+    loop_task = asyncio.create_task(keep_alive_loop())
 
+    # Configura e inicia o servidor Uvicorn
+    config = uvicorn.Config(app=asgi_app, host="0.0.0.0", port=22222)
+    server = uvicorn.Server(config)
+    await server.serve()
+
+# Entry point
 if __name__ == "__main__":
     try:
         asyncio.run(main())

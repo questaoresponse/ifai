@@ -118,7 +118,7 @@ function marcarMensagensComoLidas(chatId: any) {
     });
 }
 
-function formatTimestamp(date: Date) {
+function formatTimeBetweenMessages(date: Date) {
   const now = new Date();
   const diff = (now as any) - (date as any);
   const oneDay = 24 * 60 * 60 * 1000;
@@ -162,7 +162,7 @@ function formatTimestamp(date: Date) {
   }
 }
 
-function formatTime(date: Date) {
+function formatMessageTime(date: Date) {
   return `${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}`;
 }
 
@@ -183,7 +183,7 @@ export {
     initializeFirebase,
     marcarMensagensComoLidas,
     setUser,
-    formatTime,
-    formatTimestamp,
+    formatMessageTime,
+    formatTimeBetweenMessages,
     getDriveURL
 };

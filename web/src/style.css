@@ -135,19 +135,6 @@ form button {
   cursor: pointer;
 }
 
-#chat-box {
-  
-  padding: 1rem;
-  border-radius: 5px;
-}
-
-#chat-messages {
-  height: 200px;
-  overflow-y: scroll;
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-}
 @media (max-width:768px){
   .chatdiv{
     display:flex;
@@ -186,14 +173,6 @@ form button {
 #mainlists{
   display: flex ;
   gap: 40px;
-}
-
-#chat{border-radius: 15px;width: 60%;}
-
-.chatdiv{ 
-    display: flex;
-    justify-content: center;
-    gap: 20px;
 }
 
 .friend-avatar {
@@ -262,38 +241,6 @@ form button {
   opacity: 1;
   text-align: center;
   width: 40px;
-}
-
-#chat-input {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  padding: 8px;
-  border-radius: 25px;
-  border: 1px solid #ccc;
-  margin-top: 10px;
-}
-
-#chat-input textarea {
-  flex: 1;
-  border: none;
-  outline: none;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 25px;
-}
-
-#chat-input button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  color: #248232;
-  margin-left: 10px;
-}
-
-#chat-input button:hover {
-  color: #1b5c24;
 }
 
 .community-container {
@@ -502,14 +449,14 @@ form button {
 .page{
     display: block;
     position: relative;
-    height: calc(100% - 50px);
+    height: calc(100vh - 50px);
     overflow: auto;
     padding: 10px;
 }
 
 @media screen and (min-width: 769px) {
   .page{
-    height: calc(100%);
+    height: 100vh;
     padding-left: 85px !important;
   }
 }

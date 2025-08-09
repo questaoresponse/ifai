@@ -5,6 +5,7 @@ import "./Feed.scss";
 import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import avatar_src from "./assets/static/avatar.png";
 import { Link } from "react-router-dom";
+import auth from "./Auth";
 
 interface postsInterface{
     data: string,
@@ -21,7 +22,7 @@ const getPlural = (number: number) => {
     return number > 1 ? "s" : "";
 }
 function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
-    const { db, usuarioLogado } = useGlobal();
+    const { db, socket, worker_server, usuarioLogado } = useGlobal();
     const [ posts, setPosts ] = useState<postsInterface[]>([]);
 
     const processData = (timestamp: number) => {
@@ -67,17 +68,72 @@ function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
         if (!usuarioLogado) return;
         if (userPerfilUid == "") return;
 
-        (userPerfilUid ? getDocs(query(collection(db.current!, "posts"), where("userUid", "==", userPerfilUid), orderBy("timestamp", "desc"), limit(5))) : getDocs(query(collection(db.current!, "posts"), orderBy("timestamp", "desc"), limit(5)))).then(results=>{
-            const users = results.docs.map(doc=>doc.data().userUid);
-            getDocs(query(collection(db.current!, "usuarios"), where("uid", "in", users))).then(userResults=>{
-                const infos: { [key: string]: any } = {};
-                for (const result of userResults.docs){
-                    const doc = result.data();
-                    infos[doc.uid] = { logo: doc.fotoPerfil? getDriveURL(doc.fotoPerfil) : avatar_src, name: doc.nome  };
-                }
-                setPosts(results.docs.map(doc=>{const data = doc.data(); return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: infos[data.userUid].logo, user: infos[data.userUid].name }}) as postsInterface[]);
-            });
-        });
+        async function teste(){
+            // getDocs(collection(db.current!, "usuarios")).then(results=>{
+            //     for (const result of results.docs){
+            //         const data = result.data();
+            //         auth.post("http://127.0.0.1:8787/query",{query:"INSERT INTO users(email,logo,id,matricula,nFriends,name,password,timestamp,tokens,uid) VALUES(?,?,?,?,?,?,?,?,?,?)",params:[data.email,data.fotoPerfil,data.id,data.matricula,Number(data.nFriends),data.nome,data.password,Number(data.timestamp),data.tokens,data.uid]}).then(result=>{
+            //             console.log(result.data);
+            //         })
+            //     }
+            // });
+
+            // getDocs(collection(db.current!, "posts")).then(results=>{
+            //     for (const result of results.docs){
+            //         const data = result.data();
+            //         auth.post("http://127.0.0.1:8787/query",{query:"INSERT INTO posts(description,image,timestamp,type,user,userUid) VALUES(?,?,?,?,?,?)",params:[data.description,data.image,data.timestamp,data.type,data.user,data.userUid]}).then(result=>{
+            //             console.log(result.data);
+            //         })
+            //     }
+            // });
+            // const response = await fetch(worker_server + "/feed", {
+            //     method: "GET",
+            //     headers: {
+            //         "Authorization": "Bearer sk83mdnu9KI90KS;~D8UJKDS936NLJj9wo38dv{k0jm",
+            //         "Content-Type": "application/json"
+            //     },
+            //     // body: JSON.stringify({"query": "SELECT * FROM posts LIMIT ?;", params: [5]})
+            //     // "body:": JSON.stringify({ "query": "INSERT INTO posts(description,image,timestamp,type,user,userUid,id) VALUES(?,?,?,?,?,?,?)", "params": ["EI","ss",11111,0,"sis","jsjsjsj",2] })
+            //     // "body": JSON.stringify({"description": "aiai", image: "jjjssj",  timestamp: 11111, type: 0, user: "ssd", userUid: "siasis",  id: 1})
+            // });
+            // const data = await response.json();
+            // const { data  } = await auth.get(worker_server + "/feed");
+            console.time("ai")
+            const data = await socket.send("/feed", {});
+            console.timeEnd("ai")
+            // const data = await response.json();
+            // const users = ["Amz55DlZ91cPb2fzycRS7hNNugA2"]
+            // getDocs(query(collection(db.current!, "usuarios"), where("uid", "in", users))).then(userResults=>{
+            //     const infos: { [key: string]: any } = {};
+            //     for (const result of userResults.docs){
+            //         const doc = result.data();
+            //         infos[doc.uid] = { logo: doc.fotoPerfil? getDriveURL(doc.fotoPerfil) : avatar_src, name: doc.nome  };
+            //     }
+                setPosts(data.results.map((doc:any)=>{const data = doc; return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: data.logo || avatar_src, user: data.name }}) as postsInterface[]);
+                
+                // const infos: any = {"Amz55DlZ91cPb2fzycRS7hNNugA2":{
+                //     logo: "/src/assets/static/avatar.png",
+                //     name: "Murilo_mmc"
+                // }}
+                // console.log(infos);
+                // setPosts(data.results.map((doc:any)=>{const data = doc; return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: infos[data.userUid].logo, user: infos[data.userUid].name }}) as postsInterface[]);
+            // });
+
+        }
+        teste();
+        
+        // (userPerfilUid ? getDocs(query(collection(db.current!, "posts"), where("userUid", "==", userPerfilUid), orderBy("timestamp", "desc"), limit(5))) : getDocs(query(collection(db.current!, "posts"), orderBy("timestamp", "desc"), limit(5)))).then(results=>{
+        //     const users = results.docs.map(doc=>doc.data().userUid);
+        //     getDocs(query(collection(db.current!, "usuarios"), where("uid", "in", users))).then(userResults=>{
+        //         const infos: { [key: string]: any } = {};
+        //         for (const result of userResults.docs){
+        //             const doc = result.data();
+        //             infos[doc.uid] = { logo: doc.fotoPerfil? getDriveURL(doc.fotoPerfil) : avatar_src, name: doc.nome  };
+        //         }
+        //         console.timeEnd("ai");
+        //         setPosts(results.docs.map(doc=>{const data = doc.data(); return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: infos[data.userUid].logo, user: infos[data.userUid].name }}) as postsInterface[]);
+        //     });
+        // });
     },[usuarioLogado, userPerfilUid]);
 
     return <div id="feed">{posts.map((post, index: number)=>{

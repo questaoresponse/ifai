@@ -1,0 +1,5 @@
+D1 remoto:
+wrangler dev --remote
+
+importar D1 local:
+npx wrangler d1 execute nome-do-banco --file=./schema.sql

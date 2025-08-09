@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Hello, World!</title>
+	</head>
+	<body>
+		<h1 id="heading"></h1>
+		<script>
+const socket = new WebSocket("/ws");
+
+// Evento quando conexão abrir
+socket.addEventListener("open", () => {
+	console.log("Conectado ao WebSocket");
+	setInterval(()=>socket.send(Date.now()),5000)
+});
+
+// Evento quando receber mensagem do servidor
+socket.addEventListener("message", (event) => {
+	console.log(Date.now() - Number(event.data));
+	// console.log("Mensagem recebida:", event.data);
+});
+
+// Evento quando conexão fechar
+socket.addEventListener("close", () => {
+	console.log("Conexão fechada");
+});
+
+// Evento de erro
+socket.addEventListener("error", (event) => {
+	console.error("Erro no WebSocket:", event);
+});
+
+		</script>
+	</body>
+</html>

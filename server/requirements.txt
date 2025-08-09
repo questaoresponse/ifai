@@ -1,11 +1,13 @@
-Flask
-flask-cors
+aiohttp==3.12.15
+firebase-admin
 google-api-python-client
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
+httpx
 # dnspython
-requests
-firebase-admin
+quart
+quart_cors
+uvicorn
 # validate-email-address
 # py3dns
