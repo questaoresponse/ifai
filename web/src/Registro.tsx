@@ -1,7 +1,5 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAuth, createUserWithEmailAndPassword, type User } from "firebase/auth";
-import { collection, addDoc } from "firebase/firestore";
 import "./Sign.scss";
 import logo_src from "./assets/static/ifai2.png";
 import { useGlobal } from "./Global";
@@ -21,7 +19,7 @@ const cursos: { [key: string]: number } = {
 
 function Registro() {
   const showPopup = useRef<(msg: string) => void>(null);
-  const { db, worker_server, usuarioLogado, setUsuarioLogado } = useGlobal();
+  const { worker_server, usuarioLogado, setUsuarioLogado } = useGlobal();
 
   const [incorrectMatricula, setIncorrectMatricula] = useState(false);
   const refs = { matricula: useRef<HTMLInputElement>(null) };
@@ -53,24 +51,24 @@ function Registro() {
             password: senha,
           })
         .then((result) => {
+            if (result.data.result){
             setUsuarioLogado(result.data.user);
+            } else {
+                switch (result.data.reason) {
+                    case "email-already-in-use":
+                        showPopup.current!("E-mail já está em uso.");
+                    break;
+
+                    // case "auth/weak-password":
+                    //     showPopup.current!("A senha é muito fraca.");
+                    // break;
+
+                    // case "auth/invalid-email":
+                    //     showPopup.current!("E-mail inválido.");
+                    // break;
+                }
+            }
         })
-        .catch((err) => {
-          if (!showPopup.current) return;
-          switch (err.code) {
-            case "auth/email-already-in-use":
-              showPopup.current("E-mail já está em uso.");
-              break;
-            case "auth/weak-password":
-              showPopup.current("A senha é muito fraca.");
-              break;
-            case "auth/invalid-email":
-              showPopup.current("E-mail inválido.");
-              break;
-            default:
-              showPopup.current("Erro ao registrar: " + err.message);
-          }
-        });
       // createUserWithEmailAndPassword(getAuth(), email, senha)
       //   .then((uc) => {
       //     const user = uc.user as User;
@@ -121,12 +119,12 @@ function Registro() {
           </div>
 
           <div className="input-group">
-            <label>Email:</label>
+            <label>E-mail:</label>
             <input type="email" id="regEmail" required />
           </div>
 
           <div className="input-group">
-            <label>Matricula:</label>
+            <label>Matrícula:</label>
             <input
               ref={refs.matricula}
               type="text"

@@ -87,6 +87,9 @@
         margin-right: auto;
         width: max-content;
     }
+    .aluno-tag .go-to-chat{
+        cursor: pointer;
+    }
     .user-type-indicator {
         display: inline-flex;
         gap: 5px;
@@ -100,5 +103,8 @@
 ;    }
     .value{
         font-weight: 900;
+    }
+    #go-to-chat{
+        cursor: pointer;
     }
 }

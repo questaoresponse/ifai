@@ -14,7 +14,7 @@ export async function AuthMiddleware(c: Context, next: Next) {
                 await next();
                 return;
             } else {
-                return c.json({"error": 401});
+                return c.json({ error: 401 });
             }
         }
 
@@ -30,7 +30,7 @@ export async function AuthMiddleware(c: Context, next: Next) {
         if (is_login_page(c.req.path)){
             await next();
         } else {
-            return c.json({"error": 401})
+            return c.json({ error: 401 })
         }
     }
 }

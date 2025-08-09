@@ -19,8 +19,15 @@ app.on("/friends", async (c) => {
             .all()
             return  { result: true, results: results.results };
 
-        case "search":
-            const { term } = body;
+        case "search_friends":
+            var { term } = body;
+            var results = await c.env.DB.prepare("SELECT u.*, json_array(uid1, uid2) FROM users u INNER JOIN friends f ON ((u.uid=f.uid1 OR u.uid=f.uid2) AND (?=f.uid1 OR ?=f.uid2)) WHERE LOWER(name_ascii) LIKE ? AND f.mode=1 AND u.uid!=?")
+                .bind(uid, uid, `%${term}%`, uid)
+                .all()
+            return { result: true, results: results.results };
+
+        case "search_users":
+            var { term } = body;
             var results = await c.env.DB.prepare("SELECT u.*, (SELECT json_array(uid1, mode) FROM friends f WHERE (u.uid=f.uid1 OR u.uid=f.uid2) AND (?=f.uid1 OR ?=f.uid2)) as friend_info FROM users u WHERE LOWER(name_ascii) LIKE ? AND u.uid!=?")
                 .bind(uid, uid, `%${term}%`, uid)
                 .all()
@@ -44,8 +51,9 @@ app.on("/friends", async (c) => {
         
         case "send_request":
             const { uid_to_send_request } = body;
-            await c.env.DB.prepare("INSERT INTO friends(uid1,uid2,mode) VALUES(?,?,?)")
-                .bind(uid, uid_to_send_request, 0)
+            var time = Math.floor(Date.now() / 1000);
+            await c.env.DB.prepare("INSERT INTO friends(uid1,uid2,mode,time) VALUES(?,?,?,?)")
+                .bind(uid, uid_to_send_request, 0, time)
                 .run()
             return { result: true };
 
@@ -58,8 +66,9 @@ app.on("/friends", async (c) => {
 
         case "accept_request":
             const { uid_to_accept_request } = body;
-            await c.env.DB.prepare("UPDATE friends SET mode = 1 WHERE ( uid1 = ? OR uid2 = ?) AND (uid1 = ? OR uid2 = ?)")
-                .bind(uid, uid, uid_to_accept_request, uid_to_accept_request)
+            var time = Math.floor(Date.now() / 1000);
+            await c.env.DB.prepare("UPDATE friends SET mode = 1, time = ? WHERE ( uid1 = ? OR uid2 = ?) AND (uid1 = ? OR uid2 = ?)")
+                .bind(time, uid, uid, uid_to_accept_request, uid_to_accept_request)
                 .run()
             await c.env.DB.prepare("UPDATE users SET nFriends = nFriends + 1 WHERE uid = ? OR uid = ?")
                 .bind(uid, uid_to_accept_request)

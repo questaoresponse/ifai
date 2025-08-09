@@ -1,5 +1,5 @@
 import React, { useEffect, memo } from "react";
-import { atualizarNotificacoesChat, formatMessageTime, formatTimeBetweenMessages, getDriveURL } from "../Functions";
+import { formatMessageTime, formatTimeBetweenMessages } from "../Functions";
 
 interface messageInterface {
     arquivo?: {
@@ -23,12 +23,11 @@ interface messageInterface {
 
 interface Props {
   messages: messageInterface[];
-  usuarioLogadoId: string;
   scrollToBottom: () => void;
   onExcluir: (id: string, tipo: "audio" | "arquivo" | "imagem" | "video" | "texto", url?: string) => void;
 }
 
-const Messages: React.FC<Props> = ({ messages, usuarioLogadoId, scrollToBottom, onExcluir }) => {
+const Messages: React.FC<Props> = ({ messages, scrollToBottom, onExcluir }) => {
     const handleExcluir = (message: messageInterface) => {
         if (message.audio) return onExcluir(message.id, "audio", message.audio.url);
         if (message.arquivo) return onExcluir(message.id, "arquivo", message.arquivo.url);

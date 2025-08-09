@@ -13,29 +13,47 @@ app.use('*', cors({ origin: (origin) => origin || "*", credentials: true}), Auth
 
 // setWebsocketApp(app);
 
-app.get("/is_loged", (c: MyContext) => {
+app.get("/is_loged", async (c: MyContext) => {
     const user = c.get("user");
-    return c.json({ user });
+
+    const results = await c.env.DB.prepare("SELECT uid FROM users WHERE uid=?")
+            .bind(user.uid)
+            .run();
+
+    if (results.results.length == 1){
+        return c.json({ user });
+    } else {
+        return c.json({ error: "401" });
+    }
 });
 
-app.post("/registro", async (c) => {
+app.post("/registro", async (c: MyContext) => {
     try {
         function encodeToBase64(timestamp: number) {
-            const buffer = new ArrayBuffer(8)
-            const view = new DataView(buffer)
-            view.setBigUint64(0, BigInt(timestamp))
-            const bytes = new Uint8Array(buffer)
-            const binary = String.fromCharCode(...bytes)
-            return btoa(binary).replace(/=+$/, '') // base64 sem padding
+            const buffer = new ArrayBuffer(4);
+            new DataView(buffer).setUint32(0, timestamp);
+            return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
         }
 
         const body = await c.req.json();
 
         const { email, id, matricula, name, password } = body;
 
+        const results = await c.env.DB.prepare("SELECT email FROM users WHERE email=?")
+            .bind(email)
+            .all();
+
+        // Trata registros inválidos.
+        if (results.results.length == 1){
+            return c.json({ result: false, reason: "email-already-in-use" });
+        }
+
         const name_ascii = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const nFriends = 0;
-        const timestamp = Date.now();
+        const timestamp = Math.floor(Date.now() / 1000);
         const tokens = JSON.stringify({});
         const uid = encodeToBase64(timestamp * 1000 + Math.floor(Math.random() * 999));
 
@@ -50,9 +68,9 @@ app.post("/registro", async (c) => {
             maxAge: 60 * 60 * 24 * 365
         });
 
-        return c.json({ user: { name, uid } });
+        return c.json({ result: true, user: { name, uid } });
     } catch (e: any) {
-        return c.json({ error: e.message });
+        return c.json({ result: false, error: e.message });
     }
 });
 
@@ -60,11 +78,11 @@ app.post("/login", async (c) => {
     try {
         const body = await c.req.json();
 
-        const { email, password } = body;
+        const { name_email, password } = body;
 
 
-        const results = await c.env.DB.prepare("SELECT name, uid FROM users WHERE email=? AND password=?")
-            .bind(email, password)
+        const results = await c.env.DB.prepare("SELECT name, uid FROM users WHERE (name=? OR email=?) AND password=?")
+            .bind(name_email, name_email, password)
             .all();
         
         if (results.results.length > 0){
@@ -120,34 +138,6 @@ app.get("/images", async (c) => {
                   //   .all();
   const results = await c.env.DB.prepare("SELECT * FROM posts").all();
   return c.json(results)
-});
-app.get("/feed", async (c) => {
-                  // const results = await env.DB.prepare(query)
-                  //   .bind(...(params || []))
-                  //   .all();
-    try {
-        const results = await c.env.DB.prepare("SELECT posts.*, users.logo, users.name  FROM posts JOIN users ON posts.userUid=users.uid").all();
-        return c.json(results)
-
-    } catch (e: any){
-        return c.json({error: e.message});
-    }
-
-});
-
-app.post("/query", async (c) => {
-    const body = await c.req.json()
-    try {
-        const results = await c.env.DB.prepare(body.query)
-            .bind(...(body.params || []))
-            .all();
-            
-        return c.json(results)
-
-    } catch (e: any){
-        return c.json({error: e.message});
-    }
-//   const results = await c.env.DB.prepare(que).all();
 });
 
 export default app;

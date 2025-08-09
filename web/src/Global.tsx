@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 
-import { getAuth } from "firebase/auth";
 import { getToken, initializeFirebase, messaging, setUser } from './Functions';
-import { collection, getDocs, query, where, type Firestore } from 'firebase/firestore';
+import { type Firestore } from 'firebase/firestore';
 import auth from './Auth';
 import { SocketClient } from './SocketClient';
 
@@ -107,11 +106,12 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
 
                 setUser(user);
                 setUsuarioLogado(user);
-                setShow(true);
             }
         } else {
             setUsuarioLogado(undefined);
         }
+        
+        setShow(true);
     }
 
     useEffect(()=>{

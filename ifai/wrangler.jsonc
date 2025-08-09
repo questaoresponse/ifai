@@ -35,7 +35,13 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"migrations": [
+		{ 
+			"tag": "v1",
+			"new_sqlite_classes": ["ChatRoom"]
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

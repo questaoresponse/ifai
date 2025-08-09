@@ -36,6 +36,7 @@ export class ChatRoom {
     setFriendsApp(socketServer);
     setChatsApp(socketServer);
     setUserApp(socketServer);
+    setWebsocketApp(socketServer);
 
     server.addEventListener('close', () => {
       // Remove da lista quando desconectar

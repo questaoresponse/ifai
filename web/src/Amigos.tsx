@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {  getDatabase, ref as dbRef, get, remove, onValue, set } from "firebase/database"
-import { query, collection, updateDoc, where, getDocs, startAt,  endAt, orderBy } from "firebase/firestore";
 import { getDriveURL } from "./Functions";
 import avatar_src from "./assets/static/avatar.png";
 import { useGlobal } from "./Global";
 import "./Amigos.scss";
-import auth from "./Auth";
 
 declare global {
   interface Window {
@@ -23,7 +20,7 @@ interface friendInterface{
 }
 
 function Amigos(){
-    const { socket, db, usuarioLogado, refs:{ respa } } = useGlobal();
+    const { socket, usuarioLogado } = useGlobal();
 
     const navigate = useNavigate();
 
@@ -31,20 +28,18 @@ function Amigos(){
     const [ solicitantes, setSolicitantes ] = useState<friendInterface[]>([]);
     const [ currentPage, setCurrentPage ] = useState<number>(0);
     const [ alunos, setAlunos ] = useState<friendInterface[] | null>(null);
+    const searchUsersInfo = useRef<{ timeout: any, time: number }>({ timeout: null, time: 0 });
+    const searchFriendsInfo = useRef<{ timeout: any, time: number }>({ timeout: null, time: 0 });
 
     const refs = {
-        searchAlunos: useRef<HTMLInputElement>(null)
+        searchFriends: useRef<HTMLInputElement>(null),
+        searchAlunos: useRef<HTMLInputElement>(null),
     }
     
     const carregarAmigos = () => {
         socket.send("/friends", { operation: "get" }).then(result=>{
             if (result.result){
                 setFriends(result.results.map((friend: friendInterface)=>{ return {...friend, logo: friend.logo ? getDriveURL(friend.logo) : avatar_src }}))
-            }
-        });
-        socket.send("/friends", { operation: "get_requests" }).then(result=>{
-            if (result.result){
-                setSolicitantes(result.results.map((friend: friendInterface)=>{ return {...friend, logo: friend.logo ? getDriveURL(friend.logo) : avatar_src }}))
             }
         });
         // get(dbRef(getDatabase(),`friends/${usuarioLogado!.uid}`)).then( async (snapshot) => {
@@ -69,30 +64,56 @@ function Amigos(){
         //     }
         // });
     }
+    
+    const carregarRequests = () => {
+        socket.send("/friends", { operation: "get_requests" }).then(result=>{
+            if (result.result){
+                setSolicitantes(result.results.map((friend: friendInterface)=>{ return {...friend, logo: friend.logo ? getDriveURL(friend.logo) : avatar_src }}))
+            }
+        });
+    }
 
     const buscarAmigos = async () => {
-        const termo = (document.getElementById("searchFriendsInput")! as any).value.toLowerCase().trim();
-    
-        if (termo === "") {
-            carregarAmigos();
-            return;
+        if (!usuarioLogado) return;
+
+        if (Date.now() - searchFriendsInfo.current.time < 300){
+            clearTimeout(searchFriendsInfo.current.timeout);
+            searchFriendsInfo.current.time = Date.now();
         }
-        
-        get(dbRef(getDatabase(), `friends/${usuarioLogado!.uid}`)).then(async (snapshot) => {
-            const friends: friendInterface[] = [];
-            for (const uidAmigo in snapshot.val()){
-                const response =  await new Promise((r,_)=>{
-                    get(dbRef(getDatabase(), "usuarios/" + uidAmigo)).then((snap) => {
-                        const userAmigo = snap.val();
-                        if (userAmigo.nome.toLowerCase().includes(termo)) {
-                            r({ fotoPerfil: userAmigo.fotoPerfil ? userAmigo.fotoPerfil : avatar_src, nome: userAmigo.nome, id: userAmigo.uidentificador });
+
+        searchFriendsInfo.current = { timeout: setTimeout(()=>{
+            const termo = refs.searchFriends.current!.value.toLowerCase().trim();
+    
+            if (termo === "") {
+                carregarAmigos();
+                return;
+            }
+
+            socket.send("/friends", { operation: "search_friends", term: termo }).then(async result=>{
+                const friends: any[] = [];
+                for (const user of result.results){
+                    
+                    // modes:
+                    // 1: amigos
+                    // 0: sended_request
+                    // -1 not_requested
+
+                    const [ uid1, mode_number ] = user.friend_info ? JSON.parse(user.friend_info) : [ "", -1];
+                    const uid = user.uid;
+                    if ( uid != usuarioLogado.uid ){
+                        var mode;
+                        if (mode_number == -1){
+                            mode = "unsolicited";
+                        } else {
+                            mode = mode_number == 1 ? "friend" : uid1 == usuarioLogado!.uid ? "sended_request" : "received_request";
                         }
-                        r(null);
-                    });
-                });
-                if (response) friends.push(response as friendInterface);
-            };
-        });
+
+                        friends.push({ logo: user.logo ? getDriveURL(user.logo) : avatar_src, name: user.name, mode, uid });
+                    }
+                }
+                setFriends(friends);
+            });
+        },300), time: Date.now() };
     }
 
     function removerAmigo(uidAmigo: string) {
@@ -103,16 +124,6 @@ function Amigos(){
                 setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidAmigo == aluno.uid ? "unsolicited" : aluno.mode }})]);
             }
         });
-        // const userDbRef = collection(db.current!, 'usuarios');
-        // getDocs(query(userDbRef, where("uid", "in", [usuarioLogado!.uid, uidAmigo]))).then(results=>{
-        //     results.forEach(result=>{
-        //         updateDoc(result.ref, { nFriends: result.data().nFriends + 1 });
-        //     })
-        // });
-        // remove(dbRef(getDatabase(),`friends/${usuarioLogado.uid}/${uidAmigo}`));
-        // remove(dbRef(getDatabase(),`friends/${uidAmigo}/${usuarioLogado.uid}`)).then(() => {
-        //     carregarAmigos();
-        // });
     }
 
     const buscarAlunos = () => {
@@ -121,38 +132,44 @@ function Amigos(){
             return;
         }
     
-        const termo = refs.searchAlunos.current!.value.toLowerCase().trim();;
-    
-        if (termo === "") {
-            setAlunos(null);
-            return;
+        if (Date.now() - searchUsersInfo.current.time < 300){
+            clearTimeout(searchUsersInfo.current.timeout);
+            searchUsersInfo.current.time = Date.now();
         }
 
-        socket.send("/friends", { operation: "search", term: termo }).then(async result=>{
-            console.log(result);
-            const alunos: any[] = [];
-            for (const user of result.results){
-                
-                // modes:
-                // 1: amigos
-                // 0: sended_request
-                // -1 not_requested
-
-                const [ uid1, mode_number ] = user.friend_info ? JSON.parse(user.friend_info) : [ "", -1];
-                const uid = user.uid;
-                if ( uid != usuarioLogado.uid ){
-                    var mode;
-                    if (mode_number == -1){
-                        mode = "unsolicited";
-                    } else {
-                        mode = mode_number == 1 ? "friend" : uid1 == usuarioLogado!.uid ? "sended_request" : "received_request";
-                    }
-
-                    alunos.push({ logo: user.logo ? getDriveURL(user.logo) : avatar_src, name: user.name, mode, uid });
-                }
+        searchUsersInfo.current = { timeout: setTimeout(()=>{
+            const termo = refs.searchAlunos.current!.value.toLowerCase().trim();
+    
+            if (termo === "") {
+                setAlunos(null);
+                return;
             }
-            setAlunos(alunos);
-        });
+
+            socket.send("/friends", { operation: "search_users", term: termo }).then(async result=>{
+                const alunos: any[] = [];
+                for (const user of result.results){
+                    
+                    // modes:
+                    // 1: amigos
+                    // 0: sended_request
+                    // -1 not_requested
+
+                    const [ uid1, mode_number ] = user.friend_info ? JSON.parse(user.friend_info) : [ "", -1];
+                    const uid = user.uid;
+                    if ( uid != usuarioLogado.uid ){
+                        var mode;
+                        if (mode_number == -1){
+                            mode = "unsolicited";
+                        } else {
+                            mode = mode_number == 1 ? "friend" : uid1 == usuarioLogado!.uid ? "sended_request" : "received_request";
+                        }
+
+                        alunos.push({ logo: user.logo ? getDriveURL(user.logo) : avatar_src, name: user.name, mode, uid });
+                    }
+                }
+                setAlunos(alunos);
+            });
+        },300), time: Date.now() };
     }
 
     function enviarPedido(uidDestino:any) {
@@ -170,7 +187,6 @@ function Amigos(){
         if (!usuarioLogado) return;
         socket.send("/friends", { operation: "remove_send_request", uid_to_remove_send_request: uidDestino }).then(result=>{
             if (result.result){
-                carregarAmigos();
                 setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidDestino == aluno.uid ? "unsolicited" : aluno.mode }})]);
             }
         })
@@ -197,19 +213,23 @@ function Amigos(){
         if (!usuarioLogado) return;
         socket.send("/friends", { operation: "decline_request", uid_to_decline_request:  uidSolicitante }).then(result=>{
             if (result.result){
-                carregarAmigos();
                 setAlunos(alunos=>[...(alunos || []).map(aluno=>{ return {...aluno, mode: uidSolicitante == aluno.uid ? "unsolicited" : aluno.mode }})]);
             }
-            // remove(dbRef(getDatabase(),`friendRequests/${usuarioLogado!.uid}/${uidSolicitante}`)).then(() => {
-        //     carregarAmigos();
         });
     }
+
+    useEffect(()=>{
+        if (currentPage == 0){
+            carregarAmigos();
+        } else if (currentPage == 1){
+            carregarRequests();
+        }
+    },[currentPage]);
 
     useEffect(()=>{
         const query = new URLSearchParams(location.search);
         const page = query.get("page");
         if (usuarioLogado && page && ["0","1","2"].includes(page)){
-            carregarAmigos();
             setCurrentPage(Number(page));
         } else if (!page){
             navigate("/amigos?page=0");
@@ -257,19 +277,17 @@ function Amigos(){
                 <section id="lista-amigos" style={{ display: currentPage === 0 ? "block" : "none" }}>
                     <h2>Meus Amigos</h2>
                     <div className="search-box" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <input type="text" id="searchFriendsInput" placeholder="Pesquisar amigo" style={{ padding: "5px", flex: 1 }}></input>
-                        <button id="searchButton" onClick={buscarAmigos}>
-                            <i className="fas fa-search" aria-hidden="true"></i>
-                        </button>
+                        <input ref={refs.searchFriends} onInput={buscarAmigos} type="text" id="searchFriendsInput" placeholder="Pesquisar amigo" style={{ padding: "5px", flex: 1 }}></input>
                     </div>
 
                     <br />
                     <br />
                     <div id="friendsList" style={{ minHeight: "100px" }}>{friends.map((friend, index: number)=>{
                         return <div className="friend-item" style={{ display: "flex", alignItems: "center", marginBottom: "10px "}} key={index}>
-                            <img src={friend.logo} alt={"Foto de " + friend.name} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
-                            <strong>{friend.name}</strong>
-                            <button id="go-to-friend-perfil" onClick={()=>navigate(`/perfil?id=${friend.uid}`)}>Ver Perfil</button>
+                            <Link to={`/perfil?id=${friend.uid}`}>
+                                <img src={friend.logo} alt={"Foto de " + friend.name} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
+                            </Link>
+                            <Link className="name-friend" to={`/perfil?id=${friend.uid}`}>{friend.name}</Link>
                             <button id="remove-friend" onClick={()=>removerAmigo(friend.uid)}>Remover</button>
                         </div>
                     })}</div>
@@ -305,8 +323,11 @@ function Amigos(){
                     })}
                     </div>
                 </section>
-                <section id="search-amigos" style={{ display: currentPage === 2 ? "block" : "none" }}>
-                    <input ref={refs.searchAlunos} onInput={buscarAlunos}></input>
+                <section id="search-users" style={{ display: currentPage === 2 ? "block" : "none" }}>
+                    <h2>Usuários</h2>
+                    <div className="search-box" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input ref={refs.searchAlunos} onInput={buscarAlunos} placeholder="Pesquisar usuário" style={{ padding: "5px", flex: 1 }}></input>
+                    </div>
                     <div id="searchResults">{alunos ? alunos.length == 0 ? <div>Nenhum usuário encontrado.</div> : alunos.map((aluno, index: number)=>{
                         return <div className="friends-item" key={index}>
                             <Link className="friends-link" to={ "/perfil?id=" + aluno.uid }>

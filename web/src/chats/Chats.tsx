@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { atualizarNotificacoesChat, getDriveURL, onMessage } from "../Functions";
+import { atualizarNotificacoesChat, getDriveURL } from "../Functions";
 import { getDatabase, ref as dbRef, set, query as queryDb, get, onValue, remove, update, push, orderByChild, serverTimestamp } from "firebase/database"
-import { getStorage, ref as storageRef, deleteObject, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
-import avatar_src from "../assets/static/avatar.png";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { useGlobal } from "../Global";
 import "./Chats.scss";
 import "../Conversations.scss";
@@ -130,72 +129,72 @@ function Chats(){
         });
     }
 
-    function excluirAudio(messageId: any, audioUrl: string) {
-      if (!usuarioLogado || !chatId.current) return;
+    // function excluirAudio(messageId: any, audioUrl: string) {
+    //   if (!usuarioLogado || !chatId.current) return;
     
-      if (confirm("Tem certeza que deseja excluir esta mensagem de áudio?")) {
-        deleteObject(storageRef(getStorage(), audioUrl)).then(() => {
-            return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
-        }).then(() => {
-            console.log("Mensagem de áudio excluída com sucesso");
-          })
-          .catch(error => {
-            console.error("Erro ao excluir mensagem de áudio:", error);
-            showPopup.current("Não foi possível excluir a mensagem.");
-          });
-      }
-    }
+    //   if (confirm("Tem certeza que deseja excluir esta mensagem de áudio?")) {
+    //     deleteObject(storageRef(getStorage(), audioUrl)).then(() => {
+    //         return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
+    //     }).then(() => {
+    //         console.log("Mensagem de áudio excluída com sucesso");
+    //       })
+    //       .catch(error => {
+    //         console.error("Erro ao excluir mensagem de áudio:", error);
+    //         showPopup.current("Não foi possível excluir a mensagem.");
+    //       });
+    //   }
+    // }
     
-    function excluirImagem(messageId: string, imageUrl: string) {
-      if (!usuarioLogado || !otherUser.current) return;
+    // function excluirImagem(messageId: string, imageUrl: string) {
+    //   if (!usuarioLogado || !otherUser.current) return;
     
-      if (confirm("Tem certeza que deseja excluir esta mensagem com imagem?")) {
-        deleteObject(storageRef(getStorage(), imageUrl)).then(() => {
-            return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
-          })
-          .then(() => {
-            console.log("Mensagem e imagem excluídas com sucesso");
-          })
-          .catch((error: any) => {
-            console.error("Erro ao excluir mensagem com imagem:", error);
-            showPopup.current("Não foi possível excluir a mensagem.");
-          });
-      }
-    }
+    //   if (confirm("Tem certeza que deseja excluir esta mensagem com imagem?")) {
+    //     deleteObject(storageRef(getStorage(), imageUrl)).then(() => {
+    //         return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
+    //       })
+    //       .then(() => {
+    //         console.log("Mensagem e imagem excluídas com sucesso");
+    //       })
+    //       .catch((error: any) => {
+    //         console.error("Erro ao excluir mensagem com imagem:", error);
+    //         showPopup.current("Não foi possível excluir a mensagem.");
+    //       });
+    //   }
+    // }
     
-    function excluirVideo(messageId: any, videoUrl: string) {
-      if (!usuarioLogado || !chatId.current) return;
+    // function excluirVideo(messageId: any, videoUrl: string) {
+    //   if (!usuarioLogado || !chatId.current) return;
     
-      if (confirm("Tem certeza que deseja excluir esta mensagem com vídeo?")) {
-            deleteObject(storageRef(getStorage(), videoUrl)).then(() => {
-                return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
-            })
-            .then(() => {
-                console.log("Mensagem e vídeo excluídos com sucesso");
-            })
-            .catch(error => {
-                console.error("Erro ao excluir mensagem com vídeo:", error);
-                showPopup.current("Não foi possível excluir a mensagem.");
-            });
-      }
-    }
+    //   if (confirm("Tem certeza que deseja excluir esta mensagem com vídeo?")) {
+    //         deleteObject(storageRef(getStorage(), videoUrl)).then(() => {
+    //             return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
+    //         })
+    //         .then(() => {
+    //             console.log("Mensagem e vídeo excluídos com sucesso");
+    //         })
+    //         .catch(error => {
+    //             console.error("Erro ao excluir mensagem com vídeo:", error);
+    //             showPopup.current("Não foi possível excluir a mensagem.");
+    //         });
+    //   }
+    // }
     
-    function excluirArquivo(messageId: any, fileUrl: any) {
-      if (!usuarioLogado || !chatId.current) return;
+    // function excluirArquivo(messageId: any, fileUrl: any) {
+    //   if (!usuarioLogado || !chatId.current) return;
     
-      if (confirm("Tem certeza que deseja excluir esta mensagem com arquivo?")) {
-        deleteObject(storageRef(getStorage(), fileUrl)).then(() => {
-            return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
-          })
-          .then(() => {
-            console.log("Mensagem e arquivo excluídos com sucesso");
-          })
-          .catch((error: any) => {
-            console.error("Erro ao excluir mensagem com arquivo:", error);
-            showPopup.current("Não foi possível excluir a mensagem.");
-          });
-      }
-    }
+    //   if (confirm("Tem certeza que deseja excluir esta mensagem com arquivo?")) {
+    //     deleteObject(storageRef(getStorage(), fileUrl)).then(() => {
+    //         return remove(dbRef(getDatabase(),`chats/${chatId.current}/${messageId}`));
+    //       })
+    //       .then(() => {
+    //         console.log("Mensagem e arquivo excluídos com sucesso");
+    //       })
+    //       .catch((error: any) => {
+    //         console.error("Erro ao excluir mensagem com arquivo:", error);
+    //         showPopup.current("Não foi possível excluir a mensagem.");
+    //       });
+    //   }
+    // }
 
     function monitorarDigitacao() {
         if (!usuarioLogado || !otherUser.current) return;
@@ -602,75 +601,75 @@ function Chats(){
         });
     }
 
-    function excluirMensagem(messageId: string) {
-        if (confirm("Tem certeza que deseja excluir esta mensagem?")) {
-            remove(dbRef(getDatabase(), `chats/${chatId.current}/${messageId}`)).then(() => {
-                console.log("Mensagem excluída com sucesso");
-            })
-            .catch((error) => {
-                console.error("Erro ao excluir mensagem:", error);
-            });
-        }
-    }
+    // function excluirMensagem(messageId: string) {
+    //     if (confirm("Tem certeza que deseja excluir esta mensagem?")) {
+    //         remove(dbRef(getDatabase(), `chats/${chatId.current}/${messageId}`)).then(() => {
+    //             console.log("Mensagem excluída com sucesso");
+    //         })
+    //         .catch((error) => {
+    //             console.error("Erro ao excluir mensagem:", error);
+    //         });
+    //     }
+    // }
     
-    function toggleMenuOpcoes(menuId: string) {
-      const menu = document.getElementById(menuId);
-      if (menu!.style.display === "block") {
-        menu!.style.display = "none";
-      } else {
-        document.querySelectorAll(".menu-opcoes").forEach((m: any) => {
-            m.style.display = "none";
-        });
-        menu!.style.display = "block";
-      }
-    }
+    // function toggleMenuOpcoes(menuId: string) {
+    //   const menu = document.getElementById(menuId);
+    //   if (menu!.style.display === "block") {
+    //     menu!.style.display = "none";
+    //   } else {
+    //     document.querySelectorAll(".menu-opcoes").forEach((m: any) => {
+    //         m.style.display = "none";
+    //     });
+    //     menu!.style.display = "block";
+    //   }
+    // }
     
-    function iniciarSelecao(elemento: any, messageId: string) {
-        if (!modoSelecao.current) {
-            modoSelecao.current = true;
-            mensagensSelecionadas.current = [];
-            toggleSelecaoMensagem(elemento, messageId);
+    // function iniciarSelecao(elemento: any, messageId: string) {
+    //     if (!modoSelecao.current) {
+    //         modoSelecao.current = true;
+    //         mensagensSelecionadas.current = [];
+    //         toggleSelecaoMensagem(elemento, messageId);
         
-            const barraOpcoes = document.getElementById("barra-opcoes-selecao");
-            if (barraOpcoes) {
-                barraOpcoes.style.display = "flex";
-            }
-        }
-    }
+    //         const barraOpcoes = document.getElementById("barra-opcoes-selecao");
+    //         if (barraOpcoes) {
+    //             barraOpcoes.style.display = "flex";
+    //         }
+    //     }
+    // }
     
-    function toggleSelecaoMensagem(elemento: any, messageId: string) {
-        if (!modoSelecao) return;
+    // function toggleSelecaoMensagem(elemento: any, messageId: string) {
+    //     if (!modoSelecao) return;
         
-        if (!elemento.classList.contains("mensagem-usuario")) return;
+    //     if (!elemento.classList.contains("mensagem-usuario")) return;
         
-        const index = mensagensSelecionadas.current.findIndex(
-            (m) => m.messageId === messageId,
-        );
+    //     const index = mensagensSelecionadas.current.findIndex(
+    //         (m) => m.messageId === messageId,
+    //     );
         
-        if (index === -1) {
-            mensagensSelecionadas.current.push({
-                chatId,
-                messageId
-            });
-            elemento.style.opacity = "0.7";
-            elemento.querySelector(".message-bubble").style.borderWidth = "2px";
-            elemento.querySelector(".message-bubble").style.borderStyle = "solid";
-            elemento.querySelector(".message-bubble").style.borderColor = "yellow";
-        } else {
-            mensagensSelecionadas.current.splice(index, 1);
-            elemento.style.opacity = "1";
-            elemento.querySelector(".message-bubble").style.border = "none";
+    //     if (index === -1) {
+    //         mensagensSelecionadas.current.push({
+    //             chatId,
+    //             messageId
+    //         });
+    //         elemento.style.opacity = "0.7";
+    //         elemento.querySelector(".message-bubble").style.borderWidth = "2px";
+    //         elemento.querySelector(".message-bubble").style.borderStyle = "solid";
+    //         elemento.querySelector(".message-bubble").style.borderColor = "yellow";
+    //     } else {
+    //         mensagensSelecionadas.current.splice(index, 1);
+    //         elemento.style.opacity = "1";
+    //         elemento.querySelector(".message-bubble").style.border = "none";
         
-            if (mensagensSelecionadas.current.length === 0) {
-                cancelarSelecao();
-            }
-        }
+    //         if (mensagensSelecionadas.current.length === 0) {
+    //             cancelarSelecao();
+    //         }
+    //     }
         
-        const contador = document.getElementById("contador-selecionadas");
-        if (contador) {
-            contador.textContent = `${mensagensSelecionadas.current.length} selecionada${mensagensSelecionadas.current.length !== 1 ? "s" : ""}`;
-        }
-    }
+    //     const contador = document.getElementById("contador-selecionadas");
+    //     if (contador) {
+    //         contador.textContent = `${mensagensSelecionadas.current.length} selecionada${mensagensSelecionadas.current.length !== 1 ? "s" : ""}`;
+    //     }
+    // }
     
     function cancelarSelecao() {
         modoSelecao.current = false;
@@ -707,28 +706,28 @@ function Chats(){
         }
     }
     
-    function getFileIcon(fileType: string | null) {
-      if (!fileType) return '<i class="fa-solid fa-file"></i>';
+    // function getFileIcon(fileType: string | null) {
+    //   if (!fileType) return '<i class="fa-solid fa-file"></i>';
     
-      if (fileType.includes("pdf")) return '<i class="fa-solid fa-file-pdf"></i>';
-      if (fileType.includes("word")) return '<i class="fa-solid fa-file-word"></i>';
-      if (fileType.includes("excel") || fileType.includes("spreadsheet")) return '<i class="fa-solid fa-file-excel"></i>';
-      if (fileType.includes("zip") || fileType.includes("rar")) return '<i class="fa-solid fa-file-zipper"></i>';
-      if (fileType.includes("text")) return '<i class="fa-solid fa-file-lines"></i>';
+    //   if (fileType.includes("pdf")) return '<i class="fa-solid fa-file-pdf"></i>';
+    //   if (fileType.includes("word")) return '<i class="fa-solid fa-file-word"></i>';
+    //   if (fileType.includes("excel") || fileType.includes("spreadsheet")) return '<i class="fa-solid fa-file-excel"></i>';
+    //   if (fileType.includes("zip") || fileType.includes("rar")) return '<i class="fa-solid fa-file-zipper"></i>';
+    //   if (fileType.includes("text")) return '<i class="fa-solid fa-file-lines"></i>';
     
-      return '<i class="fa-solid fa-file"></i>';
-    }
+    //   return '<i class="fa-solid fa-file"></i>';
+    // }
     
-    function formatFileSize(bytes: number) {
-      if (!Number.isFinite(bytes) || bytes < 0) return "Tamanho inválido";
-      if (bytes === 0) return "0 Bytes";
+    // function formatFileSize(bytes: number) {
+    //   if (!Number.isFinite(bytes) || bytes < 0) return "Tamanho inválido";
+    //   if (bytes === 0) return "0 Bytes";
     
-      const k = 1024;
-      const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
+    //   const k = 1024;
+    //   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    //   const i = Math.floor(Math.log(bytes) / Math.log(k));
     
-      return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
-    }
+    //   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+    // }
 
     function iniciarGravacaoAudio() {
         if (!usuarioLogado || !otherUser.current) return;
@@ -1198,10 +1197,8 @@ function Chats(){
         if (!usuarioLogado) return;
 
         if (location.pathname.startsWith("/chat")){
-            console.log("ri")
             chatId.current = Number(location.pathname.split("/")[2]);
             socket.send("/chat", { operation: "get_messages", id: chatId.current }).then(result=>{
-                console.log(result);
                 if (result.result){
                     const users = JSON.parse(result.results.users);
                     const uids = Object.keys(users);
@@ -1239,7 +1236,7 @@ function Chats(){
         <h4 ref={respa} className="hidden" id="resultadoPA"></h4>
 
         <div className="chatdiv">
-            {!mobile || (mobile && location.pathname  == "/chats") ? <History chatId={chatId}></History> : <></>}
+            {!mobile || (mobile && location.pathname  == "/chats") ? <History></History> : <></>}
 
             { !mobile || (mobile && location.pathname == "/chat") ? <section id="chat">
             {/* <p>
@@ -1252,7 +1249,7 @@ function Chats(){
             </div>
 
             <div id="chat-box" style={{display: "none"}}>
-                <Messages messages={messages} usuarioLogadoId={usuarioLogado ? usuarioLogado!.uid : ""} scrollToBottom={scrollToBottom} onExcluir={useCallback((..._)=>{},[])}></Messages>
+                <Messages messages={messages} scrollToBottom={scrollToBottom} onExcluir={useCallback((..._)=>{},[])}></Messages>
                 <div id="typingIndicatorContainer" style={{ display: 'none' }}></div>
                 <div id="chat-input" className={messages.length > 0 ? "loaded" : ""}>
                     <input

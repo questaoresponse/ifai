@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { useGlobal } from "./Global";
 import { getDriveURL } from "./Functions";
 import "./Feed.scss";
-import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import avatar_src from "./assets/static/avatar.png";
 import { Link } from "react-router-dom";
-import auth from "./Auth";
 
 interface postsInterface{
     data: string,
@@ -22,7 +20,7 @@ const getPlural = (number: number) => {
     return number > 1 ? "s" : "";
 }
 function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
-    const { db, socket, worker_server, usuarioLogado } = useGlobal();
+    const { socket, usuarioLogado } = useGlobal();
     const [ posts, setPosts ] = useState<postsInterface[]>([]);
 
     const processData = (timestamp: number) => {

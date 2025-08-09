@@ -1,31 +1,28 @@
-import { useEffect, type RefObject, memo } from "react";
-import { formatMessageTime, getDriveURL } from "../Functions";
-import { getDatabase, ref as dbRef, query as queryDb, get, onValue } from "firebase/database"
+import { useEffect, memo, useState } from "react";
+import { getDriveURL } from "../Functions";
 import avatar_src from "../assets/static/avatar.png";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import { useGlobal } from "../Global";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-function History({chatId}:{chatId: RefObject<number>}){
-    const { server, socket, db, mobile, usuarioLogado, refs: { respa } } = useGlobal();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [ chats, setChats]
+interface chatsInterface {
+    id: string,
+    logo: string,
+    name: string,
+    message_time: number,
+    message_text: string
+
+}
+function History(){
+    const { socket, mobile, usuarioLogado } = useGlobal();
+    const [ chats, setChats ] = useState<chatsInterface[]>([]);
 
     const atualizarFriendSelect = () => {
         if (!usuarioLogado) return;
-        
-        const friendList = document.getElementById("friendList");
-        if (!friendList) {
-            console.error("Elemento friendList não encontrado");
-            return;
-        }
-        friendList.innerHTML = "";
         socket.send("/chats",{}).then(result=>{
-            if (result.result){                        
-                const chats = result.results;
+            if (result.result){    
+                const chats: chatsInterface[] = result.results;
 
-                setChats(chats.map(chat=>{ return { name: chat.name, logo: getDriveURL(chat.logo) || avatar_src, id: chat.id }}));
+                setChats(chats.map(chat=>{ return {  id: chat.id, logo: chat.logo ? getDriveURL(chat.logo) : avatar_src, name: chat.name, message_time: chat.message_time, message_text: chat.message_text }}));
 
                     // function atualizarUltimaMensagem(message: any) {
 
@@ -57,34 +54,34 @@ function History({chatId}:{chatId: RefObject<number>}){
 
     }
     
-    function atualizarbadge(uidAmigo: string, badgeId: string) {
+    // function atualizarbadge(uidAmigo: string, badgeId: string) {
 
-        onValue(dbRef(getDatabase(),`chats/${chatId.current}`), (snapshot: any) => {
-            let totalNaoLidas = 0;
+    //     onValue(dbRef(getDatabase(),`chats/${chatId.current}`), (snapshot: any) => {
+    //         let totalNaoLidas = 0;
 
-            snapshot.forEach((messageSnap: any) => {
-                const mensagem = messageSnap.val();
-                if (mensagem.remetente === uidAmigo && mensagem.lida === false) {
-                    totalNaoLidas++;
-                }
-            });
+    //         snapshot.forEach((messageSnap: any) => {
+    //             const mensagem = messageSnap.val();
+    //             if (mensagem.remetente === uidAmigo && mensagem.lida === false) {
+    //                 totalNaoLidas++;
+    //             }
+    //         });
 
-            const badge = document.getElementById(badgeId);
-            if (badge) {
-                if (totalNaoLidas > 0) {
-                    badge.textContent = totalNaoLidas > 99 ? "99+" : String(totalNaoLidas);
-                    badge.style.display = "inline-block";
-                } else {
-                    badge.style.display = "none";
-                }
-            }
-        });
-    }
+    //         const badge = document.getElementById(badgeId);
+    //         if (badge) {
+    //             if (totalNaoLidas > 0) {
+    //                 badge.textContent = totalNaoLidas > 99 ? "99+" : String(totalNaoLidas);
+    //                 badge.style.display = "inline-block";
+    //             } else {
+    //                 badge.style.display = "none";
+    //             }
+    //         }
+    //     });
+    // }
 
-    function selecionarChat(uidAmigo: any) {
-        const NewChatId = [usuarioLogado!.uid, uidAmigo].sort().join("_");
-        navigate("/chat?id=" + NewChatId);
-    }
+    // function selecionarChat(uidAmigo: any) {
+    //     const NewChatId = [usuarioLogado!.uid, uidAmigo].sort().join("_");
+    //     navigate("/chat?id=" + NewChatId);
+    // }
 
     useEffect(()=>{
         if (!mobile){
@@ -103,7 +100,14 @@ function History({chatId}:{chatId: RefObject<number>}){
             </span>
             <h2 id="label-chats">Conversas</h2>
         </div>
-        <div id="friendList"></div>
+        <div id="friendList">{chats.map((chat, index: number)=>{
+            return <Link className="chat-link" to={`/chat/${chat.id}`} key={index}>
+                <div>
+                    <img src={chat.logo}></img>
+                    <div>{chat.name}</div>
+                </div>
+            </Link>
+        })}</div>
     </section>
 }
 

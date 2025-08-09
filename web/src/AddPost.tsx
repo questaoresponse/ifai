@@ -45,7 +45,7 @@ function AddPost(){
             const post = {
                 type: 0,
                 userUid: usuarioLogado.uid,
-                user: usuarioLogado.displayName || "",
+                user: usuarioLogado.name || "",
                 image: result.data.file_id,
                 description,
                 description_lower: description.toLowerCase(),

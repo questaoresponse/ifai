@@ -2,12 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { getDriveURL } from './Functions';
 import { getDatabase, ref as dbRef, update } from 'firebase/database';
 import Header from './Header';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useGlobal } from './Global';
 import "./Perfil.scss";
 import avatar_src from "./assets/static/avatar.png";
 import auth from './Auth';
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import Feed from './Feed';
 
 const cursos: { [key: string]: any } = {
@@ -31,17 +30,19 @@ interface Perfil {
     password: string,
     timestamp: number,
     uid: string,
-    fotoPerfil: string
+    logo: string
     tipoUsuario: 'aluno' | 'professor'  
 }
 
 const Perfil = () => {
-    const { worker_server, socket, db, server, usuarioLogado } = useGlobal();
+    const { socket, server, usuarioLogado } = useGlobal();
     const [displayName, setDisplayName] = useState<string>('Carregando...');
     const [nFriends, setNFriends] = useState(0);
     const [avatarSrc, setAvatarSrc] = useState<string>(avatar_src);
     const [showRemovePhotoButton, setShowRemovePhotoButton] = useState<boolean>(false);
     const [currentUser, setCurrentUser] = useState<Perfil | null>(null);
+
+    const navigate = useNavigate();
 
     const refs = {
         avatar: useRef<HTMLImageElement>(null),
@@ -69,63 +70,17 @@ const Perfil = () => {
         });
     }
 
-    useEffect(()=>{
-        if (usuarioLogado){
-            function getQueryParam(param: any) {
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get(param);
-            }
-
-            function carregarPerfil(uid: string) {
-                socket.send("/perfil",{}).then(result=>{
-                    if (result.result){
-                        const userData = result.perfil;
-                        setDisplayName(userData.nome || "Usuário");
-                        setNFriends(userData.nFriends);
-                        setCurrentUser({ ...userData, uid });
-
-                        if (userData.fotoPerfil) {
-                            setAvatarSrc(getDriveURL(userData.fotoPerfil));
-                        } else {
-                            setAvatarSrc(avatar_src);
-                        }
-
-                        if (usuarioLogado && usuarioLogado!.uid === uid) {
-                            refs.avatar.current!.style.cursor = "pointer";
-
-                            refs.removePhotoBtn.current!.addEventListener("click", removerFotoPerfil);
-
-                            refs.removePhotoBtn.current!.style.display = userData.fotoPerfil ? "block" : "none"; 
-                        } else {
-                            refs.removePhotoBtn.current!.style.display = "none"; 
-                        }
-                    } else {
-                        document.getElementById("profileName")!.textContent = "Usuário não encontrado";
-                    }
-                })
-                .catch((error: any) => {
-                    console.error("Erro ao buscar dados do usuário:", error);
-                });
-            }
-
-            function removerFotoPerfil() {
-                update(dbRef(getDatabase(), "usuarios/" + usuarioLogado!.uid), { fotoPerfil: null })
-                .then(() => {
-                    refs.avatar.current!.src = avatar_src;
-                    refs.removePhotoBtn.current!.style.display = "none"; 
-                })
-                .catch((error: any) => {
-                    console.error("Erro ao remover foto de perfil:", error);
-                });
-            }
-            const userIdFromURL = getQueryParam("id");
-            if (userIdFromURL) {
-                carregarPerfil(userIdFromURL);
-            } else {
-                carregarPerfil(usuarioLogado.uid);
-            }
+    const goToChat = () => {
+        if (usuarioLogado!.uid != currentUser!.uid){
+            socket.send("/chat", { operation: "go_to_chat", user_to_navigate_chat: currentUser!.uid }).then(result=>{
+                if (result.result){
+                    navigate(`/chat/${result.chat_id}`);
+                }
+            });
+        } else {
+            navigate("/chats");
         }
-    }, [usuarioLogado]);
+    }
 
     const handleEditIconClick = (): void => {
         const fileInput = document.getElementById('fileInput') as HTMLInputElement;
@@ -157,6 +112,64 @@ const Perfil = () => {
         }
     };
 
+        useEffect(()=>{
+        if (usuarioLogado){
+            function getQueryParam(param: any) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(param);
+            }
+
+            function carregarPerfil(uid: string) {
+                socket.send("/perfil", { uid }).then(result=>{
+                    if (result.result){
+                        const userData = result.perfil;
+                        setDisplayName(userData.name || "Usuário");
+                        setNFriends(userData.nFriends);
+                        setCurrentUser({ ...userData, uid });
+
+                        if (userData.logo) {
+                            setAvatarSrc(getDriveURL(userData.logo));
+                        } else {
+                            setAvatarSrc(avatar_src);
+                        }
+
+                        if (usuarioLogado && usuarioLogado!.uid === uid) {
+                            refs.avatar.current!.style.cursor = "pointer";
+
+                            refs.removePhotoBtn.current!.addEventListener("click", removerFotoPerfil);
+
+                            refs.removePhotoBtn.current!.style.display = userData.logo ? "block" : "none"; 
+                        } else {
+                            refs.removePhotoBtn.current!.style.display = "none"; 
+                        }
+                    } else {
+                        document.getElementById("profileName")!.textContent = "Usuário não encontrado";
+                    }
+                })
+                .catch((error: any) => {
+                    console.error("Erro ao buscar dados do usuário:", error);
+                });
+            }
+
+            function removerFotoPerfil() {
+                update(dbRef(getDatabase(), "usuarios/" + usuarioLogado!.uid), { fotoPerfil: null })
+                .then(() => {
+                    refs.avatar.current!.src = avatar_src;
+                    refs.removePhotoBtn.current!.style.display = "none"; 
+                })
+                .catch((error: any) => {
+                    console.error("Erro ao remover foto de perfil:", error);
+                });
+            }
+            const userIdFromURL = getQueryParam("id");
+            if (userIdFromURL) {
+                carregarPerfil(userIdFromURL);
+            } else {
+                carregarPerfil(usuarioLogado.uid);
+            }
+        }
+    }, [usuarioLogado]);
+
     return <>
         <main id="perfil-page" className='page'>
             <section id="perfil">
@@ -185,6 +198,10 @@ const Perfil = () => {
                                         <div className="aluno-tag">
                                             <i className="fa-solid fa-user"></i>
                                             &nbsp;{cursos[currentUser.matricula.split("111")[1].split("0")[0]]}
+                                        </div>
+                                        <div id="go-to-chat" className='aluno-tag' onClick={goToChat}>
+                                            <i className="fa-solid fa-message"></i>
+                                            &nbsp;Mensagem
                                         </div>
                                     </>
                                 )}

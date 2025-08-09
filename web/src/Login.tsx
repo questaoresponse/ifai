@@ -1,6 +1,5 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { getAuth, signInWithEmailAndPassword, type UserCredential } from "firebase/auth";
 import logo_src from "./assets/static/ifai2.png";
 import { useGlobal } from "./Global";
 import "./Sign.scss";
@@ -16,12 +15,14 @@ function Login(){
     
     const submit = (e: any) => {
         e.preventDefault();
-        const email = (document.getElementById('loginEmail') as any).value;
+        const name_email = (document.getElementById('loginNameEmail') as any).value;
         const password = (document.getElementById('loginSenha') as any).value;
 
-        auth.post(worker_server + "/login", { email, password }).then(result=>{
+        auth.post(worker_server + "/login", { name_email, password }).then(result=>{
             if (result.data.result){
                 setUsuarioLogado(result.data.user);
+            } else {
+                showPopup.current("Nome de usuário, e-mail ou senha incorreto.")
             }
         })
         // signInWithEmailAndPassword(getAuth(), email, senha)
@@ -38,8 +39,8 @@ function Login(){
             <form onSubmit={submit} id="sign-container">
                 <img id="logo" src={logo_src} width="150px"/>
                 <div className="input-group">
-                    <label>Email:</label>
-                    <input type="email" id="loginEmail" required/>
+                    <label>Nome ou e-mail:</label>
+                    <input id="loginNameEmail" required/>
                 </div>
                 <div className="input-group">
                     <label>Senha:</label>
