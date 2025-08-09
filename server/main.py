@@ -365,12 +365,12 @@ async def favicon():
     return await send_file("public/favicon.ico")
 
 @app.route("/assets/<filename>")
-def assets_files(filename):
-    return send_from_directory("public/assets", filename)
+async def assets_files(filename):
+    return await send_from_directory("public/assets", filename)
 
 @app.route("/static/<filename>")
-def static_files(filename):
-    return send_from_directory("public/static", filename)
+async def static_files(filename):
+    return await send_from_directory("public/static", filename)
 
 @app.route('/imagem/<file_id>')
 async def baixar_imagem(file_id):
