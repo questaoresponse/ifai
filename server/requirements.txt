@@ -8,6 +8,7 @@ httpx
 # dnspython
 quart
 quart_cors
+socketio
 uvicorn
 # validate-email-address
 # py3dns
