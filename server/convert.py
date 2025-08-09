@@ -3,7 +3,7 @@ import base64
 import os
 
 # Caminhos dos arquivos
-PICKLE_FILE = 'server/token.pkl'
+PICKLE_FILE = 'token.pkl'
 BASE64_FILE = 'token_base64.txt'
 RESTORED_FILE = 'token.pkl'
 
