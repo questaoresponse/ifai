@@ -283,8 +283,8 @@ def verification():
     return "", 200
 
 @app.route("/")
-def home():
-    return send_file("public/index.html")
+async def home():
+    return await send_file("public/index.html")
 
 @app.route("/message", methods=["POST"])
 def message():
