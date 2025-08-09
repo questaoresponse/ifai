@@ -354,15 +354,15 @@ def token():
         return jsonify({ "result": True })
 
 @app.route("/<route>")
-def route(route):
+async def route(route):
     if route in [ "favicon.ico", "firebase-messaging-sw.js", "service-worker.js" ]:
-        return send_file(f"public/{route}")
+        return await send_file(f"public/{route}")
 
-    return send_file("public/index.html")
+    return await send_file("public/index.html")
 
 @app.route("/favicon.ico")
-def favicon():
-    return send_file("public/favicon.ico")
+async def favicon():
+    return await send_file("public/favicon.ico")
 
 @app.route("/assets/<filename>")
 def assets_files(filename):
@@ -373,7 +373,7 @@ def static_files(filename):
     return send_from_directory("public/static", filename)
 
 @app.route('/imagem/<file_id>')
-def baixar_imagem(file_id):
+async def baixar_imagem(file_id):
     print(file_id)
     request = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
@@ -386,7 +386,7 @@ def baixar_imagem(file_id):
     
     # Volta para o início do buffer
     fh.seek(0)
-    return send_file(fh, mimetype='image/jpeg')
+    return await send_file(fh, mimetype='image/jpeg')
 
 @app.route("/logout", methods=["POST"])
 def logout():
