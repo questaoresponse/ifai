@@ -1,6 +1,6 @@
-server/service_account.json
 server/credentials.json
 server/token.pkl
+service_account.json
 token.pkl
 
 node_modules/

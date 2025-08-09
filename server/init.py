@@ -19,7 +19,7 @@ def get_drive_service():
     return build('drive', 'v3', credentials=load_creds())
 
 def get_firebase_db():
-    cred = credentials.Certificate('service_account.json')
+    cred = credentials.Certificate('../service_account.json')
     firebase_admin.initialize_app(cred)
     return firestore.client()
 
