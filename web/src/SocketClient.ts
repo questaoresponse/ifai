@@ -10,6 +10,7 @@ export class SocketClient{
         this.socket.addEventListener("open",()=>{
             console.log("aberto");
         });
+        
         // Evento quando receber mensagem do servidor
         this.socket.addEventListener("message", (message) => {
             const data = JSON.parse(message.data);

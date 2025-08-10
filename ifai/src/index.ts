@@ -1,11 +1,9 @@
 import { Hono } from "hono";
 import { cors } from 'hono/cors';
-import setUserApp from "./user";
 import { AuthMiddleware } from "./middleware";
-import { HonoInterface, MyContext, Variables } from "./types";
+import { HonoInterface, MyContext } from "./types";
 import { setCookie } from "hono/cookie";
 import { encrypt } from "./cryptography";
-import setWebsocketApp from "./websocket";
 import { ChatRoom } from "./ChatRoom";
 
 const app = new Hono<HonoInterface>();
@@ -62,9 +60,10 @@ app.post("/registro", async (c: MyContext) => {
             .run();
 
         setCookie(c, "token", await encrypt(JSON.stringify([name,uid])), {
-            domain: c.req.header('host')!.split(":")[0],
+            domain: (c.req.header('X-Forwarded-Host') || c.req.header("host"))!.split(":")[0],
             httpOnly: true,
             secure: true,
+            sameSite: "None",
             maxAge: 60 * 60 * 24 * 365
         });
 
@@ -88,9 +87,10 @@ app.post("/login", async (c) => {
         if (results.results.length > 0){
             const { name, uid } = results.results[0] as { name: string, uid: string };
             setCookie(c, "token", await encrypt(JSON.stringify([name,uid])), {
-                domain: c.req.header('host')!.split(":")[0],
+                domain: (c.req.header('X-Forwarded-Host') || c.req.header("host"))!.split(":")[0],
                 httpOnly: true,
                 secure: true,
+                sameSite: "None",
                 maxAge: 60 * 60 * 24 * 365
             });
 
@@ -104,9 +104,20 @@ app.post("/login", async (c) => {
 });
 
 app.get('/ws', async (c: MyContext) => {
-
+    function jsonToBase64(obj: { [key: string]: any }) {
+        const jsonString = JSON.stringify(obj);
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(jsonString);
+        
+        let binary = "";
+        for (const byte of bytes) {
+            binary += String.fromCharCode(byte);
+        }
+        
+        return btoa(binary);
+    }
     const headers = new Headers(c.req.raw.headers);
-    headers.set('X-Variables', JSON.stringify({ user: c.get("user") }));
+    headers.set('X-Variables', jsonToBase64({ user: c.get("user") }));
 
     const req = new Request(c.req.raw.url, {
         method: c.req.raw.method,
@@ -123,9 +134,10 @@ app.get('/ws', async (c: MyContext) => {
 
 app.get("/logout", async (c) => {
     setCookie(c,"token","", {
-        domain: c.req.header('host')!.split(":")[0],
+        domain: (c.req.header('X-Forwarded-Host') || c.req.header("host"))!.split(":")[0],
         httpOnly: true,
         secure: true,
+        sameSite: "None",
         maxAge: 0
     });
 

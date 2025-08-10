@@ -6,8 +6,8 @@ import auth from './Auth';
 import { SocketClient } from './SocketClient';
 
 const server = import.meta.env.DEV ? window.location.hostname == "localhost" ? "http://localhost:5174" : "https://6v9s4f5f-5174.brs.devtunnels.ms" : "https://ifai-phwn.onrender.com";
-const worker_server = import.meta.env.DEV ? "http://localhost:8787" : "https://ifai.eneagonlosamigos.workers.dev";
-const socket_server = import.meta.env.DEV ? "ws://localhost:8787/ws" : "wss://ifai.eneagonlosamigos.workers.dev/ws";
+const worker_server = import.meta.env.DEV ? window.location.hostname == "localhost" ? "http://localhost:8787" : "https://6v9s4f5f-8787.brs.devtunnels.ms" : "https://ifai.eneagonlosamigos.workers.dev";
+const socket_server = import.meta.env.DEV ? window.location.hostname == "localhost" ? "ws://localhost:8787/ws" : "wss://6v9s4f5f-8787.brs.devtunnels.ms/ws" : "wss://ifai.eneagonlosamigos.workers.dev/ws";
 
 
 if (navigator.serviceWorker.controller) {
@@ -30,10 +30,7 @@ type GlobalContextInterface = {
     usuarioLogado: User | undefined | null
     setUsuarioLogado: Dispatch<SetStateAction<User | undefined | null>>,
     logout: () => void,
-    setNavigate: (fn: any) => void,
-    refs: {
-        respa: RefObject<HTMLHeadingElement | null>
-    }
+    setNavigate: (fn: any) => void
 };
 
 const GlobalContext = createContext<GlobalContextInterface | undefined>(undefined);
@@ -42,16 +39,13 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
 
     const [ mobile, setMobile ] = useState<boolean>(true);
     const [ usuarioLogado, setUsuarioLogado ] = useState<User | undefined | null>(null);
-    const [ socketClient, setSocketClient ] = useState<SocketClient | null>();
+    const [ socketClient, setSocketClient ] = useState<SocketClient | null>(null);
     
     const navigate = useRef<(pathname: string) => any>(null);
     const db = useRef<Firestore>(null);
 
     const setNavigate: any = (fn: any) => {
         navigate.current = fn;
-    }
-    const refs = {
-        respa: useRef<HTMLHeadingElement>(null)
     }
 
     const logout = () => {
@@ -77,41 +71,47 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
         const user = usuarioLogado ? usuarioLogado : (await auth.get(worker_server + "/is_loged")).data.user;
             
         if (user){
-            const socketClient = new SocketClient(socket_server);
-            setSocketClient(socketClient);
-            socketClient.socket.onopen = () => {
-                initializeFirebase((dbValue: any)=>{
-                    db.current = dbValue;
+            if (!socketClient){
+                const socketClient = new SocketClient(socket_server);
+                setSocketClient(socketClient);
+                
+                socketClient.socket.onopen = () => {
+                    setShow(true);
+                    initializeFirebase((dbValue: any)=>{
+                        db.current = dbValue;
 
-                    Notification.requestPermission().then((permission) => {
-                        if (permission === 'granted') {
-                            getToken(messaging!, {
-                                vapidKey: 'BMnpFNI__s7Nfy5f9iau1GzD-VG2KsAG_Dz-du_lglQi642tZhK4oHbpH85tAVEWjR-3Q2gtLBCiPvxKfBDN-L8'
-                            })
-                            .then((currentToken) => {
-                                if (currentToken) {
-                                    auth.post(server + "/token", { user_uid: user.uid, token: currentToken });
-                                } else {
-                                    console.log('Nenhum token disponível.');
-                                }
-                            })
-                            .catch((err) => {
-                                console.log('Erro ao obter token:', err);
-                            });
-                        }
+                        Notification.requestPermission().then((permission) => {
+                            if (permission === 'granted') {
+                                getToken(messaging!, {
+                                    vapidKey: 'BMnpFNI__s7Nfy5f9iau1GzD-VG2KsAG_Dz-du_lglQi642tZhK4oHbpH85tAVEWjR-3Q2gtLBCiPvxKfBDN-L8'
+                                })
+                                .then((currentToken) => {
+                                    if (currentToken) {
+                                        auth.post(server + "/token", { user_uid: user.uid, token: currentToken });
+                                    } else {
+                                        console.log('Nenhum token disponível.');
+                                    }
+                                })
+                                .catch((err) => {
+                                    console.log('Erro ao obter token:', err);
+                                });
+                            }
+                        });
+
+                    
                     });
 
+                    setUser(user);
+                    setUsuarioLogado(user);
+                }
                 
-                });
-
-                setUser(user);
-                setUsuarioLogado(user);
+                socketClient.socket.onclose = () => setSocketClient(new SocketClient(socket_server));
             }
         } else {
             setUsuarioLogado(undefined);
+            setSocketClient(null);
+            setShow(true);
         }
-        
-        setShow(true);
     }
 
     useEffect(()=>{
@@ -176,8 +176,7 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
         usuarioLogado,
         setUsuarioLogado,
         logout,
-        setNavigate,
-        refs
+        setNavigate
     }
     return (
         <GlobalContext.Provider value={values}>{children}</GlobalContext.Provider>

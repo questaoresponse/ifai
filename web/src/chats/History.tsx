@@ -1,8 +1,8 @@
-import { useEffect, memo, useState } from "react";
+import { useEffect, memo, useState, useRef } from "react";
 import { getDriveURL } from "../Functions";
-import avatar_src from "../assets/static/avatar.png";
 import { useGlobal } from "../Global";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import avatar_src from "../assets/static/avatar.png";
 
 interface chatsInterface {
     id: string,
@@ -14,12 +14,14 @@ interface chatsInterface {
 }
 function History(){
     const { socket, mobile, usuarioLogado } = useGlobal();
+    const location = useLocation();
     const [ chats, setChats ] = useState<chatsInterface[]>([]);
+    const previousTypeLocation = useRef<"chats" | "chat" | null>(null);
 
-    const atualizarFriendSelect = () => {
+    const updateChats = () => {
         if (!usuarioLogado) return;
         socket.send("/chats",{}).then(result=>{
-            if (result.result){    
+            if (result.result){
                 const chats: chatsInterface[] = result.results;
 
                 setChats(chats.map(chat=>{ return {  id: chat.id, logo: chat.logo ? getDriveURL(chat.logo) : avatar_src, name: chat.name, message_time: chat.message_time, message_text: chat.message_text }}));
@@ -84,10 +86,12 @@ function History(){
     // }
 
     useEffect(()=>{
-        if (!mobile){
-            atualizarFriendSelect();
+        const newTypeLocation = location.pathname === "/chats" ? "chats" : "chat";
+        if ((mobile && newTypeLocation != previousTypeLocation.current && newTypeLocation == "chats") || !mobile){
+            updateChats();
         }
-    }, [mobile, usuarioLogado]);
+        previousTypeLocation.current = newTypeLocation;
+    }, [mobile, location.pathname, usuarioLogado]);
 
     return <section id="history">
         <div id="top-chats">
@@ -101,11 +105,9 @@ function History(){
             <h2 id="label-chats">Conversas</h2>
         </div>
         <div id="friendList">{chats.map((chat, index: number)=>{
-            return <Link className="chat-link" to={`/chat/${chat.id}`} key={index}>
-                <div>
-                    <img src={chat.logo}></img>
-                    <div>{chat.name}</div>
-                </div>
+            return <Link className="chat-item-link" to={`/chat/${chat.id}`} key={index}>
+                <img className="chat-item-logo" src={chat.logo}></img>
+                <div>{chat.name}</div>
             </Link>
         })}</div>
     </section>

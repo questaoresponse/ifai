@@ -13,7 +13,17 @@ cursor = conn.cursor()
 # conn.commit()
 # cursor.execute("""DELETE FROM friends""")
 # cursor.execute("""ALTER TABLE friends ADD time INTEGER""")
-# conn.commit()
+# cursor.execute("UPDATE users SET nFriends=1 WHERE name='Questão Response2'")
+cursor.execute("""CREATE TABLE messages(
+    text TEXT,
+    uid TEXT,
+    visualized INTEGER,
+    type INTEGER,
+    time INTEGER,
+    chat_id INTEGER,
+    id INTEGER UNIQUE
+)""")
+conn.commit()
 cursor.execute("SELECT * FROM users u")
 for row in cursor.fetchall():
     print(row)
