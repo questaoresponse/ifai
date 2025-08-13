@@ -67,6 +67,16 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
         setMobile(window.innerWidth < 769);
     }
 
+    const reinitializeSocketClient = () => {
+        setSocketClient(socketClient=>{
+            const newSocketClient = new SocketClient(socket_server);
+            newSocketClient.not_awaited_events = socketClient!.not_awaited_events;
+            newSocketClient.socket.onclose = reinitializeSocketClient;
+
+            return newSocketClient;
+        });
+    }
+
     const initialize = async () => {
         const user = usuarioLogado ? usuarioLogado : (await auth.get(worker_server + "/is_loged")).data.user;
             
@@ -87,7 +97,12 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
                                 })
                                 .then((currentToken) => {
                                     if (currentToken) {
-                                        auth.post(server + "/token", { user_uid: user.uid, token: currentToken });
+                                        auth.post(worker_server + "/token", { token: currentToken }).then(result=>{
+                                            if (result.data.needs_restart){
+                                                socketClient.socket.close();
+                                                reinitializeSocketClient()
+                                            }
+                                        });
                                     } else {
                                         console.log('Nenhum token disponível.');
                                     }
@@ -105,7 +120,7 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
                     setUsuarioLogado(user);
                 }
                 
-                socketClient.socket.onclose = () => setSocketClient(new SocketClient(socket_server));
+                socketClient.socket.onclose = reinitializeSocketClient;
             }
         } else {
             setUsuarioLogado(undefined);

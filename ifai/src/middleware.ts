@@ -23,6 +23,7 @@ export async function AuthMiddleware(c: Context, next: Next) {
         // Armazena o token no contexto para a rota acessar depois
         const arr = JSON.parse(token);
         c.set('user', { name: arr[0], uid: arr[1] });
+        c.set('f_token', getCookie(c, 'f_token'));
 
         // Continua para o handler
         await next();

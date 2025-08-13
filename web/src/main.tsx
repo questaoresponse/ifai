@@ -9,9 +9,9 @@ createRoot(document.getElementById('root')!).render(
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register("/service-worker.js")
-      .then(reg => {
-        console.log('[SW] Registrado com sucesso:', reg.scope);
+      .register("/service-worker.js?v=0.01")
+      .then(_ => {
+        // console.log('[SW] Registrado com sucesso:', reg.scope);
       })
       .catch(err => {
         console.error('[SW] Falha no registro:', err);

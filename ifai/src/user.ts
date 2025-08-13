@@ -12,7 +12,6 @@ app.on("/perfil", async (c) => {
         .all();
 
     if (results.results.length == 1){
-        console.log(results.results[0]);
         return { result: true, perfil: results.results[0] };
     } else {
         return { result: false };

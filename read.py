@@ -14,18 +14,20 @@ cursor = conn.cursor()
 # cursor.execute("""DELETE FROM friends""")
 # cursor.execute("""ALTER TABLE friends ADD time INTEGER""")
 # cursor.execute("UPDATE users SET nFriends=1 WHERE name='Questão Response2'")
-cursor.execute("""CREATE TABLE messages(
-    text TEXT,
-    uid TEXT,
-    visualized INTEGER,
-    type INTEGER,
-    time INTEGER,
-    chat_id INTEGER,
-    id INTEGER UNIQUE
-)""")
-conn.commit()
-cursor.execute("SELECT * FROM users u")
+# cursor.execute("""CREATE TABLE messages(
+#     text TEXT,
+#     uid TEXT,
+#     visualized INTEGER,
+#     type INTEGER,
+#     time INTEGER,
+#     chat_id INTEGER,
+#     id INTEGER UNIQUE
+# )""")
+# cursor.execute("""UPDATE messages SET visualized=time""")
+# conn.commit()
+cursor.execute("SELECT name,tokens FROM users")
 for row in cursor.fetchall():
     print(row)
 
 conn.close()
+   

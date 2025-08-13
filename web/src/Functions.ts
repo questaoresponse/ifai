@@ -60,6 +60,23 @@ const initializeFirebase = (fn: any) => {
     firebase = await initializeApp(firebaseConfig);
     db = getFirestore();
     messaging = getMessaging();
+    navigator.serviceWorker.ready.then(registration => {
+        function sendVisibilityStatus() {
+            if (registration.active) {
+            registration.active.postMessage({
+                type: 'PAGE_VISIBILITY',
+                visible: !document.hidden
+            });
+            }
+        }
+
+        sendVisibilityStatus();
+
+        document.addEventListener('visibilitychange', () => {
+            sendVisibilityStatus();
+        });
+    });
+
     // const analytics = getAnalytics(firebase);
     for (const fn of functions){
         fn(db);
@@ -118,52 +135,53 @@ function marcarMensagensComoLidas(chatId: any) {
     });
 }
 
+function formatTimeSegment(time: number): string {
+    return time < 10 ? `0${String(time)}` : String(time);
+}
+
 function formatTimeBetweenMessages(date: Date) {
-  const now = new Date();
-  const diff = (now as any) - (date as any);
-  const oneDay = 24 * 60 * 60 * 1000;
-  const oneMinute = 60 * 1000;
+    const now = new Date();
+    const diff = (now as any) - (date as any);
+    const oneDay = 24 * 60 * 60 * 1000;
 
-  const months = [
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro"
-  ]
-  
-  const days = [
-    "Segunda",
-    "Terça",
-    "Quarta",
-    "Quinta",
-    "Sexta",
-    "Sábado",
-    "Domingo",
-  ];
+    const months = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro"
+    ]
+    
+    const days = [
+        "Segunda",
+        "Terça",
+        "Quarta",
+        "Quinta",
+        "Sexta",
+        "Sábado",
+        "Domingo",
+    ];
 
-  if (diff < oneMinute) {
-    return "Agora";
-  } else if (diff < oneDay && date.getDate() === now.getDate()) {
-    return `Hoje`;
-  } else if (diff < oneDay * 2 && date.getDate() === now.getDate() - 1) {
-    return `Ontem`;
-  } else if (diff < 7 * 24 * 60 * 60 * 1000) {
-    return days[date.getDay()];
-  } else {
-    return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
-  }
+    if (diff < oneDay && date.getDate() === now.getDate()) {
+        return `Hoje`;
+    } else if (diff < oneDay * 2 && date.getDate() === now.getDate() - 1) {
+        return `Ontem`;
+    } else if (diff < 7 * 24 * 60 * 60 * 1000) {
+        return days[date.getDay()];
+    } else {
+        return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
+    }
 }
 
 function formatMessageTime(date: Date) {
-  return `${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}`;
+  return `${formatTimeSegment(date.getHours())}:${date.getMinutes().toString().padStart(2, "0")}`;
 }
 
 const setUser = (user: any) => {

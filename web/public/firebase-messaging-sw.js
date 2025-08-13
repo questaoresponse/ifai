@@ -13,24 +13,39 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Receber notificações em segundo plano
+let isPageVisible = false;
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'PAGE_VISIBILITY') {
+    isPageVisible = event.data.visible;
+  }
+});
+
 messaging.onBackgroundMessage(payload => {
-  console.log('[firebase-messaging-sw.js] Background message:', payload);
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
+  self.registration.getNotifications({ tag: payload.data.title }).then(notifications => {
+    for (const notification of notifications) {
+      console.log(notification);
+      // notification.close();
+    }
+  });
+
+  if (isPageVisible) return;
+
+  self.registration.showNotification(payload.data.title, {
+    body: payload.data.body,
     icon: '/icon.png',
     data: {
         url: payload.data.url
-    }
+    },
+    tag: payload.data.title,
+    renotify: true
   });
 });
 
 self.addEventListener('notificationclick', event => {
-  event.notification.close(); // fecha a notificação
+  event.notification.close();
 
-  // Abre uma janela/aba com a URL desejada
-  console.log(event.notification.data)
   event.waitUntil(
-    clients.openWindow(event.notification.data?.url || 'https://ifai-phwn.onrender.com') // substitua pela URL que quiser
+    clients.openWindow(event.notification.data?.url || 'https://ifai-phwn.onrender.com')
   );
 });

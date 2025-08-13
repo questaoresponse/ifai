@@ -7,13 +7,15 @@ interface ExtendedBindings extends CloudflareBindings {
 }
 
 interface Variables {
-    user: { name: string, uid: string }
+    f_token: string,
+    user: { name: string, uid: string },
+    origin: string
 }
 
 interface MyContext extends Context<{
     Bindings: ExtendedBindings;
     Variables: Variables;
-}, "/friends", BlankInput> {
+}, "*", BlankInput> {
 }
 
 interface HonoInterface {

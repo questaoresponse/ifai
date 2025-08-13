@@ -76,7 +76,6 @@ def delete_file(file_id):
         fileId=file_id,
         supportsAllDrives=True
     ).execute()
-    print(f"Arquivo {file_id} deletado.")
 
 # ✏️ Atualizar arquivo
 def update_file(file_id, new_file_path):
@@ -106,24 +105,41 @@ def download_file(file_id, destination_path):
     # update_file('FILE_ID', 'novo_arquivo.txt')
     # download_file('FILE_ID', 'saida.txt')
 
-async def remove_file(filename):
-    time.sleep(1)
-    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    os.remove(temp_path)
+async def remove_file(filename, tentativas=10, espera=1):
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
+    for i in range(tentativas):
+        try:
+            os.remove(path)
+            print(f"Arquivo {path} removido com sucesso.")
+            return True
+        except PermissionError:
+            print(f"Arquivo está em uso, tentando novamente... ({i + 1}/{tentativas})")
+            await asyncio.sleep(espera)
+    print(f"Não foi possível remover o arquivo {path} após {tentativas} tentativas.")
+    return False
 
-def receive_and_upload_file(FOLDER_ID, filename):
-    if 'file' not in request.files:
+async def save_file(file):
+    _, ext = os.path.splitext(file.filename)
+
+    # Definir novo nome fixo
+    new_filename = f"file{ext}"
+
+    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
+    await file.save(temp_path)
+
+    return temp_path
+
+async def receive_and_upload_file(FOLDER_ID, filename, files):
+    if 'file' not in files:
         return jsonify({'result': False, 'error': 'Nenhum arquivo enviado'}), 400
 
-    file = request.files['file']
+    file = files['file']
 
     if file.filename == '':
         return jsonify({'result': False, 'error': 'Arquivo sem nome'}), 400
 
-    # Salvar temporariamente
-    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(temp_path)
+    temp_path = await save_file(file)
 
     # Enviar para o Google Drive
     file_metadata = {
@@ -131,16 +147,14 @@ def receive_and_upload_file(FOLDER_ID, filename):
         'parents': [FOLDER_ID]
     }
     uploaded_file = None
-    with open(temp_path, 'rb') as f:
-        media = MediaFileUpload(temp_path, resumable=True)
-        uploaded_file = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id, name',
-            supportsAllDrives=True
-        ).execute()
 
-    remove_file(filename)
+    media = MediaFileUpload(temp_path)
+    uploaded_file = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields='id, name',
+        supportsAllDrives=True
+    ).execute()
 
     return {
         'result': 'true',
@@ -191,39 +205,42 @@ def posts():
 
 
 @app.route("/comunidades", methods=["POST"])
-def comunidades():
+async def comunidades():
     FOLDER_ID = "1WzDR-2mhxFKS5ydLcUeroZXeNwxe-uks"
     content_type = request.content_type or ''
     if 'application/json' in content_type:
         return list_files(FOLDER_ID), 200
     else:
-        timestamp = request.form.get("timestamp")
-        filename = request.files["file"].filename
+        form = await request.form
+        files = await request.files
+        timestamp = form.get("timestamp")
+        filename = files["file"].filename
         return receive_and_upload_file(FOLDER_ID, f"comunity_{timestamp}_{filename}"), 200
 
 @app.route("/perfil", methods=["POST"])
-def perfil():
-    user_uid = request.form.get("user_uid")
-    FOLDER_ID = "1n4NyCacEBgb-jhnKpCic8aJSciDnNNn4"
-    content_type = request.content_type or ''
-    if 'application/json' in content_type:
-        return list_files(FOLDER_ID), 200
-    else:
-        timestamp = request.form.get("timestamp")
-        filename = request.files["file"].filename
+async def perfil():
+    try:
+        form = await request.form
+        files = await request.files
 
-        data = receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}")
+        file_to_remove = form.get("file_to_remove")
+        if file_to_remove:
+            delete_file(file_to_remove)
 
-        for doc in db.collection("usuarios").where(filter=("uid", "==", user_uid)).stream():
-            doc.reference.update({ 
-                "fotoPerfil": data["file_id"]
-            })
+        FOLDER_ID = "1n4NyCacEBgb-jhnKpCic8aJSciDnNNn4"
+        timestamp = form.get("timestamp")
+        filename = files["file"].filename
 
-            return jsonify(data), 200
+        data = await receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}", files)
+
+        return jsonify(data), 200
+    
+    except Exception as e:
+        print(e)
 
 @app.route("/like_action", methods=["POST"])
-def like_action():
-    data = request.get_json()
+async def like_action():
+    data = await request.get_json()
 
     action = data["action"]
     post_id = data["post_id"]
@@ -267,8 +284,8 @@ def like_action():
 #     print(f"Erro na verificação: {response.status_code}")
 
 @app.route("/email_check", methods=["POST"])
-def email_check():
-    data = request.get_json()
+async def email_check():
+    data = await request.get_json()
     if "matricula" in data:
         matricula = data["matricula"]
         # response = requests.get(f"http://apilayer.net/api/check?access_key=bcfec72ad8bc26b5f8cedf7c337a9b9d&email=catce.{matricula}@aluno.ifpi.edu.br&smtp=1&format=1").json()
@@ -277,8 +294,8 @@ def email_check():
         return jsonify({ "result": False })
 
 @app.route("/verification", methods=["POST"])
-def verification():
-    data = request.get_json()
+async def verification():
+    data = await request.get_json()
     print(data)
     return "", 200
 
@@ -286,35 +303,28 @@ def verification():
 async def home():
     return await send_file("public/index.html")
 
-@app.route("/message", methods=["POST"])
-def message():
-    data = request.get_json()
+@app.route("/notification", methods=["POST"])
+async def message():
+    data = await request.get_json()
 
-    title = data["title"]
     body = data["body"]
-    user_uid = data["other_uid"]
-    chat_id = data["chat_id"]
-    origin = request.headers.get('Origin')
-    for doc in db.collection("usuarios").where("uid", "==", user_uid).stream():
-        doc_data = doc.to_dict()
+    title = data["title"]
+    tokens = data["tokens"]
+    url = data["url"]
 
-        tokens = list(json.loads(doc_data["tokens"]).keys())
-        # token = "dl0xtGwinBFfEq2IakqnUe:APA91bFJT8DedKvr9jiQt1889KOB0QFb3lTbGmkfXPOtFeYh1CF5CGdPYsE65OwjWt5yIu2yNWkWoCxAzBeALuGyCqpnWfrj35U7b8YK82ItcKCPyrDPwXc"
-        # Monta a mensagem
-        message = messaging.MulticastMessage(
-            data={
-                "url": f"{origin}/chat?id={chat_id}"
-            },
-            notification=messaging.Notification(
-                title=title,
-                body=body,
-            ),
-            tokens=tokens,
-        )
+    message = messaging.MulticastMessage(
+        data={
+            "body": body,
+            "title": title,
+            "url": url
 
-        # Envia a mensagem
-        messaging.send_each_for_multicast(message)
-        return jsonify({ "result": True })
+        },
+        tokens=tokens,
+    )
+
+    # Envia a mensagem
+    messaging.send_each_for_multicast(message)
+    return jsonify({ "result": True })
     
 # for doc in db.collection("usuarios").stream():
 #     doc_data = doc.to_dict()
@@ -322,8 +332,8 @@ def message():
 #     doc.reference.set(doc_data)
 
 @app.route("/token", methods=["POST"])
-def token():
-    data = request.get_json()
+async def token():
+    data = await request.get_json()
     new_token = data["token"]
     user_uid = data["user_uid"]
     current_token = request.cookies.get("token")
@@ -344,7 +354,7 @@ def token():
                 "tokens": tokens 
             })
 
-            response = make_response(json.dumps({ "result": True }))
+            response = await make_response(json.dumps({ "result": True }))
             response.set_cookie('token', new_token, httponly=True, samesite=None, max_age=3600)
             
             return response
@@ -389,8 +399,8 @@ async def baixar_imagem(file_id):
     return await send_file(fh, mimetype='image/jpeg')
 
 @app.route("/logout", methods=["POST"])
-def logout():
-    data = request.get_json()
+async def logout():
+    data = await request.get_json()
     user_uid = data["user_uid"]
     current_token = request.cookies.get("token")
 
@@ -407,7 +417,7 @@ def logout():
                 "tokens": tokens 
             })
 
-            response = make_response(json.dumps({ "result": True }))
+            response = await make_response(json.dumps({ "result": True }))
             response.set_cookie('token', "", httponly=True, samesite=None, max_age=0)
             
             return response
@@ -429,7 +439,7 @@ async def main():
     loop_task = asyncio.create_task(keep_alive_loop())
 
     # Configura e inicia o servidor Uvicorn
-    config = uvicorn.Config(app=asgi_app, host="0.0.0.0", port=22222)
+    config = uvicorn.Config(app=asgi_app, host="0.0.0.0", port=5174)
     server = uvicorn.Server(config)
     await server.serve()
 

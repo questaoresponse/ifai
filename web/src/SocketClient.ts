@@ -1,6 +1,7 @@
 export class SocketClient{
     socket: WebSocket;
     events: { [key: string]: (value: { [key: string]: any }) => void } = {};
+    not_awaited_events: { [key: string]: (value: { [key: string]: any }) => void } = {};
 
     constructor (url: string){
         this.socket = new WebSocket(url);
@@ -17,8 +18,13 @@ export class SocketClient{
             const event = data.event;
             const response = data.response;
             const id = data.id;
+            const not_awaited = data.not_awaited;
             
-            if (id in this.events){
+            if (not_awaited){
+                if (event in this.not_awaited_events){
+                    this.not_awaited_events[event](response);
+                }
+            } else if (id in this.events){
                 if (data.error){
                     console.error(`event "${event}" not found`);
                 } else {
@@ -50,5 +56,9 @@ export class SocketClient{
         this.events[id] = resolve!;
 
         return promise;
+    }
+
+    async on(event: string, fn: any){
+        this.not_awaited_events[event] = fn;
     }
 }

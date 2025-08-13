@@ -1,7 +1,5 @@
-import { Hono } from "hono";
-import { HonoInterface, MyContext } from "./types";
-import { BlankSchema } from "hono/types";
 import { SocketServer } from "./SocketServer";
+import { get_app_url, send_to_room, send_to_server } from "./utils";
 
 // Definindo uma interface que extende Context para incluir a propriedade `uid`
 
@@ -11,7 +9,22 @@ app.on("/chats", async (c) => {
     const { variables, body } = c;
     const uid = variables.user.uid;
     try {
-        const results = await c.env.DB.prepare("SELECT u.*, c.id AS id FROM users u INNER JOIN chats c ON ((u.uid = c.uid1 OR u.uid = c.uid2) AND (? = c.uid1 OR ? = c.uid2)) WHERE u.uid!=?")
+        const results = await c.env.DB.prepare(`SELECT u.*, c.id AS id, 
+            (SELECT json_object(
+                'uid',m.uid,
+                'text',m.text,
+                'type',m.type,
+                'time',m.time,
+                'visualized',visualized, 
+                'new_messages_number', (
+                    SELECT COUNT(*)
+                    FROM messages m2
+                    WHERE m2.chat_id = m.chat_id
+                    AND m2.uid = m.uid
+                    AND m2.visualized = 0
+                )
+            ) FROM messages m WHERE m.chat_id = c.id ORDER BY m.time DESC LIMIT 1
+        ) AS last_message FROM users u INNER JOIN chats c ON ((u.uid = c.uid1 OR u.uid = c.uid2) AND (? = c.uid1 OR ? = c.uid2)) WHERE u.uid!=?`)
             .bind(uid, uid, uid)
             .all()
         return { result: true, results: results.results }
@@ -64,8 +77,9 @@ app.on("/chat", async (c) => {
                 .all()
 
             if (chat.results.length > 0){
-                await c.env.DB.prepare(`UPDATE messages SET visualized=1 WHERE chat_id=? AND uid!=?`)
-                    .bind(chat_id, uid)
+                const time = Math.floor(Date.now() / 1000);
+                await c.env.DB.prepare(`UPDATE messages SET visualized=? WHERE chat_id=? AND uid!=? AND visualized=0`)
+                    .bind(time, chat_id, uid)
                     .run()
 
                 var messages = await c.env.DB.prepare(`SELECT * FROM messages WHERE chat_id=? ORDER BY id`)
@@ -80,6 +94,7 @@ app.on("/chat", async (c) => {
         
         case "send_message":
             var { text, type, chat_id } = body;
+            const origin = c.variables.origin;
 
             const timestamp = Date.now();
             const id = timestamp * 1000 + Math.floor(Math.random() * 999);
@@ -87,6 +102,23 @@ app.on("/chat", async (c) => {
 
             if (chat_id / 1000 >= time){
                 return { result: false };
+            }
+
+            var results = await c.env.DB.prepare(`SELECT name, tokens, uid FROM users u INNER JOIN chats c ON (u.uid = c.uid1 OR u.uid = c.uid2) WHERE c.id=? AND (?=uid1 OR ?=uid2)`)
+                .bind(chat_id, uid, uid)
+                .all()
+
+            const lines = results.results as { name: string, tokens: string, uid: string }[];
+            const tokens = lines.filter(line=>line.uid!=uid).map(line=>Object.keys(JSON.parse(line.tokens)))[0];
+            const title = lines.filter(line=>line.uid==uid)[0].name;
+            const other_uid = lines[0].uid == uid ? lines[1].uid : lines[0].uid;
+            const url_origin = get_app_url(origin);
+
+            await send_to_room(c, other_uid, "message", { time: time, id, text, type });
+
+            // Send notification only with tokens
+            if (tokens.length > 0){
+                await send_to_server(origin, "/notification", JSON.stringify({ body: text, title, tokens, url: `${url_origin}/chat/${chat_id}` }));
             }
 
             var results = await c.env.DB.prepare(`INSERT INTO messages(text,uid,visualized,type,time,chat_id,id) VALUES(?,?,?,?,?,?,?)`)

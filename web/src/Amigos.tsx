@@ -334,7 +334,7 @@ function Amigos(){
                                 <img src={friend.logo} alt={"Foto de " + friend.name} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px "}}></img>
                             </Link>
                             <Link className="name-friend" to={`/perfil?id=${friend.uid}`}>{friend.name}</Link>
-                            <button id="remove-friend" onClick={()=>removeFriend(friend.uid)}>Remover</button>
+                            <button id="remove-friend" className="friends-btn" onClick={()=>removeFriend(friend.uid)}>Remover</button>
                         </div>
                     })}</div>
                 </section>
@@ -348,6 +348,7 @@ function Amigos(){
                             <strong>{friend.name}</strong>
                             <button
                                 id="aceitar-pedido"
+                                className="friends-btn"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     acceptRequest(friend.uid);
@@ -357,6 +358,7 @@ function Amigos(){
                             </button>
                             <button
                                 id="rejeitar-pedido"
+                                className="friends-btn"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     declineRequest(friend.uid);
@@ -383,11 +385,11 @@ function Amigos(){
                             { user.mode == Request.FRIENDS ? 
                                 <span>(Amigos)</span>
                             : user.mode == Request.SENDED_REQUEST ?
-                                <button className="retirar" onClick={()=>removeSendRequest(user.uid)}>Cancelar</button>
+                                <button className="retirar friends-btn" onClick={()=>removeSendRequest(user.uid)}>Cancelar</button>
                             : user.mode == Request.RECEIVED_REQUEST ?
                                 <>
-                                    <button className="aceitar" onClick={()=>acceptRequest(user.uid)}>Aceitar</button>
-                                    <button className="rejeitar"onClick={()=>declineRequest(user.uid)}>Rejeitar</button>
+                                    <button className="aceitar friends-btn" onClick={()=>acceptRequest(user.uid)}>Aceitar</button>
+                                    <button className="rejeitar friends-btn" onClick={()=>declineRequest(user.uid)}>Rejeitar</button>
                                 </>
                             : <i className="fa-solid fa-user-plus" onClick={()=>sendRequest(user.uid)}></i>
                             }

@@ -29,7 +29,16 @@ export class ChatRoom {
         this.env = env;
     }
 
-    fetch(request: Request) {
+    async fetch(request: Request) {
+        if (request.method === "POST"){
+            const json_str = await request.text();
+            
+            for (const socket of this.sockets.keys()) {
+                socket.send(json_str);
+            }
+            return new Response('');
+        }
+
         if (request.headers.get('Upgrade') !== 'websocket') {
             return new Response('Expected websocket', { status: 400 });
         }

@@ -90,13 +90,13 @@ const Messages: React.FC<Props> = ({showPopup}) => {
         messageInput: useRef<HTMLDivElement>(null)
     }
 
-    const handleExcluir = (_: messageInterface) => {
+    // const handleExcluir = (_: messageInterface) => {
         // if (message.audio) return onExcluir(message.id, "audio", message.audio.url);
         // if (message.arquivo) return onExcluir(message.id, "arquivo", message.arquivo.url);
         // if (message.video) return onExcluir(message.id, "video", message.video);
         // if (message.imagem) return onExcluir(message.id, "imagem", message.imagem);
         // return onExcluir(message.id!, "texto");
-    };
+    // };
 
     const togglePlayPause = (_: string, __: any) => {
 
@@ -148,12 +148,12 @@ const Messages: React.FC<Props> = ({showPopup}) => {
     const enviarMensagem = () => {
         if (!usuarioLogado || !otherUser) return;
 
-        const message = refs.messageInput.current!.textContent!;
+        const message = refs.messageInput.current!.innerText;
         if (message.trim() === "") {
             return;
         }
 
-        refs.messageInput.current!.textContent! = "";
+        refs.messageInput.current!.textContent = "";
 
         const id = generate_id();
         const time = Math.floor(id / 1000000);
@@ -173,6 +173,7 @@ const Messages: React.FC<Props> = ({showPopup}) => {
 
 
             if (messages.length == 0 || isDifferentDay(messages[messages.length-1].date, new_message_date)){
+                const id = generate_id();
                 new_messages.push({ isTime: true, date: new_message_date, id, time });
             }
                 
@@ -1283,7 +1284,7 @@ const Messages: React.FC<Props> = ({showPopup}) => {
         scrollToBottom();
     },[messages, messageInputValue]);
 
-      useEffect(()=>{
+    useEffect(()=>{
         if (!usuarioLogado) return;
 
         chatId.current = Number(location.pathname.split("/")[2]);
@@ -1311,7 +1312,7 @@ const Messages: React.FC<Props> = ({showPopup}) => {
                         new_messages.push({ isTime: true, date: new_message.date, id, time: new_message.time });
                     }
                     
-                    new_messages.push({ ...new_message, mode: new_message.visualized + 1, isTime: false, time: undefined });
+                    new_messages.push({ ...new_message, mode: Number(new_message.visualized > 0) + 1, isTime: false, time: undefined });
                 };
 
                 setMessages(new_messages);
@@ -1329,6 +1330,28 @@ const Messages: React.FC<Props> = ({showPopup}) => {
         });
     },[location.pathname, usuarioLogado]);
 
+    useEffect(()=>{
+        socket.on("message", (message: any)=>{
+            const id = generate_id();
+            const time = Math.floor(id / 1000000);
+
+            setMessages(messages=>{
+                const new_messages = [...messages];
+
+                const new_message_date = new Date(message.time * 1000);
+
+
+                if (messages.length == 0 || isDifferentDay(messages[messages.length-1].date, new_message_date)){
+                    const id = generate_id();
+                    new_messages.push({ isTime: true, date: new_message_date, id, time });
+                }
+                new_messages.push({ date: new_message_date, text: message.text, mode: 2, uid: otherUser!.uid, id, time, isTime: false });
+
+                return new_messages;
+            });
+        })
+    },[otherUser]);
+
     return <div id="chat-box" style={{display: "none"}}>
         <div id="user-info">{ otherUser ? <>
                 <img src={otherUser!.logo} id="user-logo"></img>
@@ -1340,124 +1363,101 @@ const Messages: React.FC<Props> = ({showPopup}) => {
                 ? `${String(Math.floor(message.audio.duracao / 60)).padStart(2, "0")}:${String(message.audio.duracao % 60).padStart(2, "0")}`
                 : "";
 
-            return message.isTime ? <div className="message-time">{formatTimeBetweenMessages(message.date)}</div> 
+            return message.isTime ? <div className="message-time" key={message.id}>{formatTimeBetweenMessages(message.date)}</div> 
             : <div className={"message-item "+(message.uid == usuarioLogado!.uid ? "me" : "you")} style={{ display: "flex", alignItems: "center", margin: "10px 0"}} key={message.id}>
-                <div style={{ position: "relative", display: "inline-block" }}>
-                    <div
-                        className="message-bubble"
-                        style={{
-                            color: "white",
-                            padding: "8px",
-                            borderRadius: "15px",
-                            maxWidth: "fit-content",
-                        }}
-                    >
-                        {message.imagem && (
-                            <div style={{ margin: "5px 0" }}>
-                            <img
-                                src={message.imagem}
-                                style={{ maxWidth: "250px", maxHeight: "250px", borderRadius: "10px", cursor: "pointer" }}
-                                onClick={() => abrirImagemModal(message.imagem!)}
-                            />
-                            </div>
-                        )}
-
-                        {message.video && (
-                            <div style={{ margin: "5px 0" }}>
-                            <video
-                                src={message.video}
-                                controls
-                                style={{ maxWidth: "250px", maxHeight: "250px", borderRadius: "10px" }}
-                            />
-                            </div>
-                        )}
-
-                        {message.audio && (
-                            <div
-                            style={{
-                                margin: "5px 0",
-                                display: "flex",
-                                alignItems: "center",
-                                backgroundColor: "#1b5c2438",
-                                borderRadius: "10px",
-                                padding: "8px",
-                            }}
-                            >
-                            <audio id={`audio-${message.id}`} src={message.audio.url} preload="auto" />
-                            <button
-                                onClick={() => togglePlayPause(`audio-${message.id}`, `play-btn-${message.id}`)}
-                                id={`play-btn-${message.id}`}
-                                style={{ background: "none", border: "none", fontSize: "20px", color: "green", cursor: "pointer" }}
-                            >
-                                <i className="fa-solid fa-play" />
-                            </button>
-                            <div
-                                style={{
-                                flexGrow: 1,
-                                height: "4px",
-                                backgroundColor: "#e0e0e0",
-                                borderRadius: "2px",
-                                margin: "0 10px",
-                                cursor: "pointer",
-                                }}
-                                onClick={(e) => seekAudio(`audio-${message.id}`, e.currentTarget)}
-                            >
-                                <div style={{ height: "100%", width: "0%", backgroundColor: "#248232" }} />
-                            </div>
-                            <div style={{ fontSize: "12px", color: "white" }}>{duracaoFormatada}</div>
-                            </div>
-                        )}
-
-                        {message.arquivo && (
-                            <div
-                            style={{
-                                margin: "5px 0",
-                                display: "flex",
-                                alignItems: "center",
-                                backgroundColor: "#1b5c2438",
-                                borderRadius: "10px",
-                                padding: "8px",
-                                cursor: "pointer",
-                            }}
-                            >
-                            <div style={{ marginRight: "10px", fontSize: "24px" }}>
-                                {getFileIcon(message.arquivo.tipo)}
-                            </div>
-                            <div>
-                                <strong>{message.arquivo.nome}</strong>
-                                <div style={{ fontSize: "12px", color: "white" }}>{formatFileSize(message.arquivo.tamanho || 0)}</div>
-                            </div>
-                            <a
-                                href={message.arquivo.url}
-                                target="_blank"
-                                download={message.arquivo.nome}
-                                style={{ marginLeft: "auto", color: "white", textDecoration: "none" }}
-                            >
-                                <i className="fa-solid fa-download" /> Baixar
-                            </a>
-                            </div>
-                        )}
-
-                        {message.text && <div className="message-text" style={{ whiteSpace: "pre-wrap" }}>{message.text}</div>}
-                        <div className="message-bottom">
-                            <div style={{ textAlign: "right", fontSize: "small" }}>{formatMessageTime(message.date)}</div>
-                            <i className={"message-check fa-solid "+(["", "fa-check", "fa-check-double"][message.mode!])}></i>
+                <div className="message-bubble">
+                    {message.imagem && (
+                        <div style={{ margin: "5px 0" }}>
+                        <img
+                            src={message.imagem}
+                            style={{ maxWidth: "250px", maxHeight: "250px", borderRadius: "10px", cursor: "pointer" }}
+                            onClick={() => abrirImagemModal(message.imagem!)}
+                        />
                         </div>
-                    </div>
+                    )}
 
-                    <div
+                    {message.video && (
+                        <div style={{ margin: "5px 0" }}>
+                        <video
+                            src={message.video}
+                            controls
+                            style={{ maxWidth: "250px", maxHeight: "250px", borderRadius: "10px" }}
+                        />
+                        </div>
+                    )}
+
+                    {message.audio && (
+                        <div
                         style={{
-                            cursor: "pointer",
-                            fontSize: "16px",
-                            padding: "3px",
-                            position: "absolute",
-                            right: 0,
-                            bottom: "-18px",
+                            margin: "5px 0",
+                            display: "flex",
+                            alignItems: "center",
+                            backgroundColor: "#1b5c2438",
+                            borderRadius: "10px",
+                            padding: "8px",
                         }}
-                        onClick={()=>handleExcluir(message)}
-                    >
+                        >
+                        <audio id={`audio-${message.id}`} src={message.audio.url} preload="auto" />
+                        <button
+                            onClick={() => togglePlayPause(`audio-${message.id}`, `play-btn-${message.id}`)}
+                            id={`play-btn-${message.id}`}
+                            style={{ background: "none", border: "none", fontSize: "20px", color: "green", cursor: "pointer" }}
+                        >
+                            <i className="fa-solid fa-play" />
+                        </button>
+                        <div
+                            style={{
+                            flexGrow: 1,
+                            height: "4px",
+                            backgroundColor: "#e0e0e0",
+                            borderRadius: "2px",
+                            margin: "0 10px",
+                            cursor: "pointer",
+                            }}
+                            onClick={(e) => seekAudio(`audio-${message.id}`, e.currentTarget)}
+                        >
+                            <div style={{ height: "100%", width: "0%", backgroundColor: "#248232" }} />
+                        </div>
+                        <div style={{ fontSize: "12px", color: "white" }}>{duracaoFormatada}</div>
+                        </div>
+                    )}
+
+                    {message.arquivo && (
+                        <div
+                        style={{
+                            margin: "5px 0",
+                            display: "flex",
+                            alignItems: "center",
+                            backgroundColor: "#1b5c2438",
+                            borderRadius: "10px",
+                            padding: "8px",
+                            cursor: "pointer",
+                        }}
+                        >
+                        <div style={{ marginRight: "10px", fontSize: "24px" }}>
+                            {getFileIcon(message.arquivo.tipo)}
+                        </div>
+                        <div>
+                            <strong>{message.arquivo.nome}</strong>
+                            <div style={{ fontSize: "12px", color: "white" }}>{formatFileSize(message.arquivo.tamanho || 0)}</div>
+                        </div>
+                        <a
+                            href={message.arquivo.url}
+                            target="_blank"
+                            download={message.arquivo.nome}
+                            style={{ marginLeft: "auto", color: "white", textDecoration: "none" }}
+                        >
+                            <i className="fa-solid fa-download" /> Baixar
+                        </a>
+                        </div>
+                    )}
+
+                    {message.text && <div className="message-text">{message.text}</div>}
+                    <div className="message-bottom">
+                        <div style={{ textAlign: "right", fontSize: "small" }}>{formatMessageTime(message.date)}</div>
+                        {message.uid == usuarioLogado!.uid ? <i className={"message-check fa-solid "+(["", "fa-check", "fa-check-double green"][message.mode!])}></i> :  <></>}
                     </div>
-                </div> 
+                </div>
             </div>
         })}</div>
         <div id="typingIndicatorContainer" style={{ display: 'none' }}></div>

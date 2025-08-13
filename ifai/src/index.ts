@@ -2,14 +2,29 @@ import { Hono } from "hono";
 import { cors } from 'hono/cors';
 import { AuthMiddleware } from "./middleware";
 import { HonoInterface, MyContext } from "./types";
-import { setCookie } from "hono/cookie";
+import { getCookie, setCookie } from "hono/cookie";
 import { encrypt } from "./cryptography";
 import { ChatRoom } from "./ChatRoom";
+import setHandleWithFilesApp from "./handle_with_files";
+
+type ContentfulStatusCode =
+  | 200  // OK
+  | 201  // Created
+  | 400  // Bad Request
+  | 401  // Unauthorized
+  | 403  // Forbidden
+  | 404  // Not Found
+  | 409  // Conflict
+  | 422  // Unprocessable Entity
+  | 500  // Internal Server Error
+  | 502  // Bad Gateway
+  | 503  // Service Unavailable
+  | 504; // Gateway Timeout
 
 const app = new Hono<HonoInterface>();
 app.use('*', cors({ origin: (origin) => origin || "*", credentials: true}), AuthMiddleware );
 
-// setWebsocketApp(app);
+setHandleWithFilesApp(app);
 
 app.get("/is_loged", async (c: MyContext) => {
     const user = c.get("user");
@@ -116,8 +131,21 @@ app.get('/ws', async (c: MyContext) => {
         
         return btoa(binary);
     }
+
     const headers = new Headers(c.req.raw.headers);
-    headers.set('X-Variables', jsonToBase64({ user: c.get("user") }));
+
+    const user = c.get("user");
+    const f_token = getCookie(c, "f_token");
+
+    var origin = (c.req.header('X-Forwarded-Host') || c.req.header("host"))!;
+
+    if (origin.startsWith("localhost")){
+        origin = "https://6v9s4f5f-8787.brs.devtunnels.ms";
+    } else {
+        origin = "https://" + origin;
+    }
+
+    headers.set('X-Variables', jsonToBase64({ f_token, user, origin }));
 
     const req = new Request(c.req.raw.url, {
         method: c.req.raw.method,
@@ -126,14 +154,38 @@ app.get('/ws', async (c: MyContext) => {
         // duplex: 'half', // necessário se tiver body e streaming
     });
     // const room = c.req.param('room');
-    const room="app";
+    const room=user.uid;
     const id = c.env.CHAT_ROOM.idFromName(room);
     const obj = c.env.CHAT_ROOM.get(id);
     return obj.fetch(req);
 });
 
-app.get("/logout", async (c) => {
+app.get("/logout", async (c: MyContext) => {
+    const uid = c.get("user").uid;
+    const f_token = c.get("f_token");
+    const results = await c.env.DB.prepare("SELECT tokens FROM users WHERE uid=?")
+        .bind(uid)
+        .all();
+
+    const tokens = JSON.parse(results.results[0].tokens as string);
+
+    if (f_token in tokens){
+        delete tokens[f_token];
+    }
+
+    await c.env.DB.prepare("UPDATE users SET tokens=? WHERE uid=?")
+        .bind(JSON.stringify(tokens), uid)
+        .run();
+
     setCookie(c,"token","", {
+        domain: (c.req.header('X-Forwarded-Host') || c.req.header("host"))!.split(":")[0],
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: 0
+    });
+
+    setCookie(c,"f_token","", {
         domain: (c.req.header('X-Forwarded-Host') || c.req.header("host"))!.split(":")[0],
         httpOnly: true,
         secure: true,
@@ -144,12 +196,47 @@ app.get("/logout", async (c) => {
     return c.json({ result: true });
 });
 
-app.get("/images", async (c) => {
-                  // const results = await env.DB.prepare(query)
-                  //   .bind(...(params || []))
-                  //   .all();
-  const results = await c.env.DB.prepare("SELECT * FROM posts").all();
-  return c.json(results)
+app.post("/token",async (c: MyContext) => {
+    const { token: newToken } = await c.req.json();
+    const currentToken = c.get("f_token");
+    const uid = c.get("user").uid;
+
+    if (currentToken == newToken){
+        return c.json({ result: true });
+    }
+
+    var results = await c.env.DB.prepare("SELECT tokens FROM users WHERE uid=?")
+        .bind(uid)
+        .all()
+
+    const tokens_str = results.results[0].tokens as string;
+
+    let tokens: Record<string, number> = {};
+    try {
+        tokens = JSON.parse(tokens_str || '{}');
+    } catch {
+        tokens = {};
+    }
+
+    if (currentToken) {
+        delete tokens[currentToken]
+    }
+
+    tokens[newToken] = Date.now()
+
+    await c.env.DB.prepare("UPDATE users SET tokens=? WHERE uid=?")
+        .bind(JSON.stringify(tokens), uid)
+        .run()
+
+    setCookie(c, "f_token", newToken, {
+        domain: (c.req.header('X-Forwarded-Host') || c.req.header("host"))!.split(":")[0],
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: 60 * 60 * 24 * 365
+    });
+
+    return c.json({ result: true, needs_restart: true });
 });
 
 export default app;

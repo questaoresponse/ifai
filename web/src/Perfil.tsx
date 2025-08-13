@@ -35,7 +35,7 @@ interface Perfil {
 }
 
 const Perfil = () => {
-    const { socket, server, usuarioLogado } = useGlobal();
+    const { socket, worker_server, usuarioLogado } = useGlobal();
     const [displayName, setDisplayName] = useState<string>('Carregando...');
     const [nFriends, setNFriends] = useState(0);
     const [avatarSrc, setAvatarSrc] = useState<string>(avatar_src);
@@ -58,7 +58,7 @@ const Perfil = () => {
         formData.append("file", file);
         formData.append("user_uid", usuarioLogado!.uid);
 
-        auth.post(server + "/perfil", formData).then(result=>{
+        auth.post(worker_server + "/perfil", formData).then(result=>{
             // update(dbRef(getDatabase(), "usuarios/" + usuarioLogado!.uid), { fotoPerfil: result.data.file_id })
             //     .then(() => {
                     refs.avatar.current!.src = getDriveURL(result.data.file_id);
@@ -188,24 +188,6 @@ const Perfil = () => {
                                     <i className="fas fa-pencil-alt"></i>
                                 </div>
                             )}
-                            <div className="user-type-indicator">
-                                {currentUser && (
-                                    <>
-                                        <div className="aluno-tag alunotag">
-                                            <i className="fa-solid fa-user-graduate"></i>
-                                            &nbsp;Aluno
-                                        </div>
-                                        <div className="aluno-tag">
-                                            <i className="fa-solid fa-user"></i>
-                                            &nbsp;{cursos[currentUser.matricula.split("111")[1].split("0")[0]]}
-                                        </div>
-                                        <div id="go-to-chat" className='aluno-tag' onClick={goToChat}>
-                                            <i className="fa-solid fa-message"></i>
-                                            &nbsp;Mensagem
-                                        </div>
-                                    </>
-                                )}
-                            </div>
                         </div>
                     </div>
                     <div id="profile-info">
@@ -252,6 +234,24 @@ const Perfil = () => {
                 <Link to="/settings">
                     <i id="btn-menu" className="fa-solid fa-ellipsis-vertical"></i>
                 </Link>
+                <div className="user-type-indicator">
+                    {currentUser && (
+                        <>
+                            <div className="aluno-tag alunotag">
+                                <i className="fa-solid fa-user-graduate"></i>
+                                &nbsp;Aluno
+                            </div>
+                            <div className="aluno-tag">
+                                <i className="fa-solid fa-user"></i>
+                                <div>&nbsp;{cursos[currentUser.matricula.split("111")[1].split("0")[0]]}</div>
+                            </div>
+                            <div id="go-to-chat" className='aluno-tag' onClick={goToChat}>
+                                <i className="fa-solid fa-message"></i>
+                                &nbsp;Mensagem
+                            </div>
+                        </>
+                    )}
+                </div>
             </section>
             <Feed userPerfilUid={currentUser ? currentUser.uid : ""}></Feed>
         </main>

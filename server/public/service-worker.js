@@ -12,7 +12,7 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('message', (event) => {
-  console.log('Mensagem recebida no service worker:', event.data);
+  // console.log('Mensagem recebida no service worker:', event.data);
     server = event.data.server;
 //   if (event.data.type === 'GET_DATA') {
 //     // Enviar resposta

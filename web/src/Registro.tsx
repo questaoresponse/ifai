@@ -32,80 +32,78 @@ function Registro() {
     const email = (document.getElementById("regEmail") as HTMLInputElement).value;
     const senha = (document.getElementById("regSenha") as HTMLInputElement).value;
     const id = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-    const matricula = refs.matricula.current!.value;
+    const matricula = refs.matricula.current!.value.trim();
 
     if (!/^20[0-9]{2}(1|2)(1|2)(1|2)[A-Z]+0(140|1[0-3][0-9]|0[0-9]{2})$/.test(matricula)) {
-        setIncorrectMatricula(true);
-        showPopup.current?.("Matrícula inválida.");
-        return;
+    const regex = matricula.match(/11([A-Z]+)0(\d+)$/)!;
+        if (!(regex[1] in cursos) || Number(regex[2]) > cursos[regex[1]]){
+            setIncorrectMatricula(true);
+            showPopup.current?.("Matrícula inválida.");
+            return;
+        }
     }
 
 
-    const regex = matricula.match(/11([A-Z]+)0(\d+)$/)!;
-    if (regex[1] in cursos && Number(regex[2]) <= cursos[regex[1]]) {
-        auth.post(worker_server + "/registro", {
+    auth.post(worker_server + "/registro", {
             email,
             id,
             matricula,
             name,
             password: senha,
           })
-        .then((result) => {
-            if (result.data.result){
-            setUsuarioLogado(result.data.user);
-            } else {
-                switch (result.data.reason) {
-                    case "email-already-in-use":
-                        showPopup.current!("E-mail já está em uso.");
-                    break;
+    .then((result) => {
+        if (result.data.result){
+        setUsuarioLogado(result.data.user);
+        } else {
+            switch (result.data.reason) {
+                case "email-already-in-use":
+                    showPopup.current!("E-mail já está em uso.");
+                break;
 
-                    // case "auth/weak-password":
-                    //     showPopup.current!("A senha é muito fraca.");
-                    // break;
+                // case "auth/weak-password":
+                //     showPopup.current!("A senha é muito fraca.");
+                // break;
 
-                    // case "auth/invalid-email":
-                    //     showPopup.current!("E-mail inválido.");
-                    // break;
-                }
+                // case "auth/invalid-email":
+                //     showPopup.current!("E-mail inválido.");
+                // break;
             }
-        })
-      // createUserWithEmailAndPassword(getAuth(), email, senha)
-      //   .then((uc) => {
-      //     const user = uc.user as User;
-      //     setUsuarioLogado(user);
-      //     const timestamp = Date.now();
-      //     addDoc(collection(db.current!, "usuarios"), {
-      //       email,
-      //       id,
-      //       matricula,
-      //       nFriends: 0,
-      //       name_lower: nome.toLowerCase(),
-      //       nome,
-      //       password: senha,
-      //       timestamp,
-      //       uid: user.uid,
-      //       tokens:  JSON.stringify({})
-      //     });
-      //   })
-      //   .catch((err) => {
-      //     if (!showPopup.current) return;
-      //     switch (err.code) {
-      //       case "auth/email-already-in-use":
-      //         showPopup.current("E-mail já está em uso.");
-      //         break;
-      //       case "auth/weak-password":
-      //         showPopup.current("A senha é muito fraca.");
-      //         break;
-      //       case "auth/invalid-email":
-      //         showPopup.current("E-mail inválido.");
-      //         break;
-      //       default:
-      //         showPopup.current("Erro ao registrar: " + err.message);
-      //     }
-      //   });
-    } else {
-      setIncorrectMatricula(true);
-    }
+        }
+    })
+    // createUserWithEmailAndPassword(getAuth(), email, senha)
+    //   .then((uc) => {
+    //     const user = uc.user as User;
+    //     setUsuarioLogado(user);
+    //     const timestamp = Date.now();
+    //     addDoc(collection(db.current!, "usuarios"), {
+    //       email,
+    //       id,
+    //       matricula,
+    //       nFriends: 0,
+    //       name_lower: nome.toLowerCase(),
+    //       nome,
+    //       password: senha,
+    //       timestamp,
+    //       uid: user.uid,
+    //       tokens:  JSON.stringify({})
+    //     });
+    //   })
+    //   .catch((err) => {
+    //     if (!showPopup.current) return;
+    //     switch (err.code) {
+    //       case "auth/email-already-in-use":
+    //         showPopup.current("E-mail já está em uso.");
+    //         break;
+    //       case "auth/weak-password":
+    //         showPopup.current("A senha é muito fraca.");
+    //         break;
+    //       case "auth/invalid-email":
+    //         showPopup.current("E-mail inválido.");
+    //         break;
+    //       default:
+    //         showPopup.current("Erro ao registrar: " + err.message);
+    //     }
+    //   });
   };
 
   return !usuarioLogado ? (

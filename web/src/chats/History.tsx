@@ -1,15 +1,28 @@
 import { useEffect, memo, useState, useRef } from "react";
-import { getDriveURL } from "../Functions";
+import { getDriveURL, formatMessageTime } from "../Functions";
 import { useGlobal } from "../Global";
 import { Link, useLocation } from "react-router-dom";
 import avatar_src from "../assets/static/avatar.png";
 
+function get_chat_id(pathname: string): number | null {
+    if (pathname === "/chats") return null;
+
+    return Number(pathname.split("/")[2]);
+
+}
+interface Message {
+    date: Date,
+    mode: number,
+    new_messages_number: number,
+    text: string,
+    type: number,
+    uid: string,
+}
 interface chatsInterface {
-    id: string,
+    id: number,
     logo: string,
     name: string,
-    message_time: number,
-    message_text: string
+    message: Message | null
 
 }
 function History(){
@@ -22,9 +35,24 @@ function History(){
         if (!usuarioLogado) return;
         socket.send("/chats",{}).then(result=>{
             if (result.result){
-                const chats: chatsInterface[] = result.results;
+                const chats: any[] = result.results;
 
-                setChats(chats.map(chat=>{ return {  id: chat.id, logo: chat.logo ? getDriveURL(chat.logo) : avatar_src, name: chat.name, message_time: chat.message_time, message_text: chat.message_text }}));
+                setChats(chats.map(chat=>{
+                    const message = chat.last_message ? JSON.parse(chat.last_message) : null;
+                    const chat_id = get_chat_id(location.pathname);
+                    return {  
+                        id: chat.id,
+                        logo: chat.logo ? getDriveURL(chat.logo) : avatar_src,
+                        name: chat.name,
+                        message: message ? { date: new Date(message.time * 1000),
+                            mode: Number(message.visualized > 0) + 1,
+                            new_messages_number: chat.id == chat_id ? 0 : message.new_messages_number,
+                            text: message.text,
+                            type: message.type,
+                            uid: message.uid
+                        } : null 
+                    }
+                }));
 
                     // function atualizarUltimaMensagem(message: any) {
 
@@ -87,13 +115,20 @@ function History(){
 
     useEffect(()=>{
         const newTypeLocation = location.pathname === "/chats" ? "chats" : "chat";
-        if ((mobile && newTypeLocation != previousTypeLocation.current && newTypeLocation == "chats") || !mobile){
+        // if ((mobile && newTypeLocation != previousTypeLocation.current && newTypeLocation == "chats") || !mobile){
+        //     updateChats();
+        // }
+        if (newTypeLocation === "chats" || !previousTypeLocation.current){
             updateChats();
+        }
+        if (!mobile && newTypeLocation === "chat"){
+            const chat_id = get_chat_id(location.pathname);
+            setChats(chats=>[...chats.map(chat=>{ return {...chat, message: chat.message ? {...chat.message, new_messages_number: chat.id == chat_id ? 0 : chat.message.new_messages_number } : null }})]);
         }
         previousTypeLocation.current = newTypeLocation;
     }, [mobile, location.pathname, usuarioLogado]);
 
-    return <section id="history">
+    return <>
         <div id="top-chats">
             <span className="icone" aria-hidden="true">
                 <i
@@ -106,11 +141,24 @@ function History(){
         </div>
         <div id="friendList">{chats.map((chat, index: number)=>{
             return <Link className="chat-item-link" to={`/chat/${chat.id}`} key={index}>
-                <img className="chat-item-logo" src={chat.logo}></img>
-                <div>{chat.name}</div>
+                <img className="chat-logo" src={chat.logo}></img>
+                <div className="chat-right">
+                    <div className="chat-right-top">
+                        <div className="chat-name">{chat.name}</div>
+                        {chat.message ? <div className="chat-message-time">{formatMessageTime(chat.message!.date)}</div> : <></>}
+                    </div>
+                    {chat.message ? <div className="chat-right-bottom">
+                        <div className="chat-message-text">{chat.message!.text}</div>
+                        {
+                            chat.message!.uid == usuarioLogado!.uid ? <i className={"chat-message-check fa-solid "+(["", "fa-check", "fa-check-double green"][chat.message!.mode])}></i>:
+                            chat.message.new_messages_number > 0 ? <div className="chat-new-message-number">{chat.message.new_messages_number}</div> :
+                            <></>
+                        }
+                    </div>: <></>}
+                </div>
             </Link>
         })}</div>
-    </section>
+    </>
 }
 
 export default memo(History);

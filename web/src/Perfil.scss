@@ -7,6 +7,7 @@
     section {
         background-color: white;
         padding: 1rem;
+        padding-bottom: calc(1rem - 5px);
     }
     #perfil {
         /* Add styles for the profile section if needed */
@@ -75,24 +76,30 @@
         color: white !important;
     }
     .aluno-tag {
-        display: block;
+        display: inline-flex;
+        flex-direction: row;
         background-color: #e0e0e0;
         color: #333;
         padding: 5px 10px;
         border-radius: 15px;
         font-size: 0.9rem;
-        margin-top: 15px;
         position: relative;
         margin-left: auto;
         margin-right: auto;
-        width: max-content;
+        width: fit-content;
+        margin-bottom: 5px;
+        margin-right: 5px;
+    }
+    .aluno-tag i{
+        margin-top: auto;
+        margin-bottom: auto;
     }
     .aluno-tag .go-to-chat{
         cursor: pointer;
     }
     .user-type-indicator {
-        display: inline-flex;
-        gap: 5px;
+        display: block;
+        width: 100%;
     }
     #btn-menu{
         position: absolute;
