@@ -21,7 +21,7 @@
     "lang":"pt",
     "name":"IFaí",
     "short_name":"ifai",
-    "start_url":"https://ifai-pwhn.onrender.com",
-    "scope":"https://ifai-pwhn.onrender.com",
+    "start_url":"https://ifai-phwn.onrender.com",
+    "scope":"https://ifai-phwn.onrender.com",
     "form_factor": ["handset", "desktop"]
 }
