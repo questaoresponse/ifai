@@ -11,14 +11,17 @@ const ASSETS_TO_CACHE = [
   '/static/main.js',
 ];
 
-self.addEventListener('message', (event) => {
+self.addEventListener('message', async (event) => {
     // console.log('Mensagem recebida no service worker:', event.data);
     if (!event.data.type) return;
 
     if (event.data.type == "info"){
         server = event.data.server;
     } else if (event.data.type == "clean_cache"){
-
+        const cacheNames = await caches.keys();
+        await Promise.all(
+            cacheNames.map(name => caches.delete(name))
+        );
     }
     //   if (event.data.type === 'GET_DATA') {
     //     // Enviar resposta
