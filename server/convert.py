@@ -4,7 +4,7 @@ import os
 
 # Caminhos dos arquivos
 PICKLE_FILE = 'token.pkl'
-BASE64_FILE = 'token_base64.txt'
+BASE64_FILE = '../token_base64.txt'
 RESTORED_FILE = 'token.pkl'
 
 # 🔄 Converte .pickle → Base64 (texto)

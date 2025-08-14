@@ -1,7 +1,7 @@
 server/credentials.json
 server/token.pkl
 service_account.json
-token.pkl
+token_base64.txt
 
 node_modules/
 
