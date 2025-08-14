@@ -171,10 +171,6 @@ width: auto;
     margin-bottom:15px;
     margin-left: 22.5px;
 }
-
-#header i, #header svg{
-    color: #347b3e;
-}
 #header svg{
     width: 20px;
     height: 20px;

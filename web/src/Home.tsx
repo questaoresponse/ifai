@@ -40,7 +40,7 @@ function Home(){
                     <Link to="/"><img src={logo_src} width="60px" alt="Logo" /></Link>
                 </div>
                 <Link to="/chats" className="defbtn" id="chatButton">
-                    <i className="fa-solid fa-comment-dots"></i>
+                    <i className="i-header fa-solid fa-comment-dots"></i>
                     <span id="chatNotification"></span>
                 </Link>
             </div> : <></>}

@@ -12,15 +12,21 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('message', (event) => {
-  // console.log('Mensagem recebida no service worker:', event.data);
-    server = event.data.server;
-//   if (event.data.type === 'GET_DATA') {
-//     // Enviar resposta
-//     event.source.postMessage({
-//       type: 'RESPONSE_DATA',
-//       payload: { result: 'Aqui está o dado pedido!' }
-//     });
-//   }
+    // console.log('Mensagem recebida no service worker:', event.data);
+    if (!event.data.type) return;
+
+    if (event.data.type == "info"){
+        server = event.data.server;
+    } else if (event.data.type == "clean_cache"){
+
+    }
+    //   if (event.data.type === 'GET_DATA') {
+    //     // Enviar resposta
+    //     event.source.postMessage({
+    //       type: 'RESPONSE_DATA',
+    //       payload: { result: 'Aqui está o dado pedido!' }
+    //     });
+    //   }
 });
 
 // Instala o service worker e faz cache dos arquivos essenciais
@@ -57,10 +63,12 @@ self.addEventListener('fetch', (event) => {
         const cachedResponse = await cache.match(event.request);
 
         if (cachedResponse) {
-                const contentLength = cachedResponse.headers.get("Content-Length");
-                if (contentLength && parseInt(contentLength) > 0) {
-                    return cachedResponse;
-                }
+            const contentType = cachedResponse.headers.get("Content-Type") || "";
+            const contentLength = cachedResponse.headers.get("Content-Length");
+
+            if (contentLength && parseInt(contentLength) > 0 && !contentType.startsWith("text/html")) {
+                return cachedResponse;
+            }
         }
 
         const req = new Request(event.request.url, {
@@ -72,9 +80,13 @@ self.addEventListener('fetch', (event) => {
 
         const response = await fetch(req);
 
-        const contentLength = response.headers.get("Content-Length");
-        if (contentLength && parseInt(contentLength) > 0) {
-            return cachedResponse;
+        if (response) {
+            const contentType = response.headers.get("Content-Type") || "";
+            const contentLength = response.headers.get("Content-Length");
+
+            if (contentLength && parseInt(contentLength) > 0 && !contentType.startsWith("text/html")) {
+                cache.put(req, response.clone());
+            }
         }
 
         return response;

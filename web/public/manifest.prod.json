@@ -16,11 +16,11 @@
         }
     ],
     "orientation":"any",
-    "display":"standalone",
+    "display":"fullscreen",
     "dir":"auto",
     "lang":"pt",
     "name":"IFaí",
-    "short_name":"ifai",
+    "short_name":"IFaí",
     "start_url":"https://ifai-phwn.onrender.com",
     "scope":"https://ifai-phwn.onrender.com",
     "form_factor": ["handset", "desktop"]

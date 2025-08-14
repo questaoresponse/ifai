@@ -11,9 +11,10 @@ const socket_server = import.meta.env.DEV ? window.location.hostname == "localho
 
 
 if (navigator.serviceWorker.controller) {
-  navigator.serviceWorker.controller.postMessage({
-    server
-  });
+    navigator.serviceWorker.controller.postMessage({
+        type: "info",
+        server
+    });
 }
 
 interface User {

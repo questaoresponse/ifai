@@ -1,12 +1,29 @@
 #settings{
     .setting-item{
-        display: flex;
-        flex-direction: row;
+        display: block;
+        border-radius: 5px;
+        border: solid 1px gray;
+        margin-bottom: 10px;
+        padding: 4px;
     }
-    .setting-item > *{
-        margin-top: auto;
-        margin-bottom: auto;
-        margin-right: 5px;
+    .setting-title{
+        cursor: pointer;
+    }
+    .setting-title{
+        background-color: green;
+        color: white;
+        width: fit-content;
+        padding: 5px;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    .setting-title:active{
+        transition: opacity 1s ease;
+        opacity: 0.5;
+    }
+    .setting-description{
+        font-size: 90%;
+        color: rgb(70,70,70)
     }
     #logoutBtn{
         background-color: rgb(218, 76, 76);

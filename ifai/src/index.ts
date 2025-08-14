@@ -225,23 +225,34 @@ app.get('/get_file/:file_id', async (c: MyContext) => {
     const cache = caches.default;
     const request = c.req.raw; // Request original do fetch event
 
-    // 1 - Tenta pegar do cache
     let response = await cache.match(request);
-    if (response) {
-        return new Response(response.body, response);
+
+    if (response){
+        const contentType = response.headers.get("Content-Type") || "";
+        const contentLength = response.headers.get("Content-Length");
+        
+        if (contentLength && parseInt(contentLength) > 0 && !contentType.startsWith("text/html")) {
+            return new Response(response.body, response);
+        }
     }
 
     // 2 - Busca no servidor externo
     const url = get_server_url(origin) + "/get_file/" + file_id;
-    
+
     response = await fetch(url);
 
-    // 3 - Clona para poder armazenar no cache
     const cachedResponse = new Response(response.body, response);
-    cachedResponse.headers.set('Cache-Control', 'public, max-age=2678400');
 
-    // 4 - Salva no cache da borda
-    c.executionCtx.waitUntil(cache.put(request, cachedResponse.clone()));
+    if (response){
+        const contentType = response.headers.get("Content-Type") || "";
+        const contentLength = response.headers.get("Content-Length");
+
+        if (contentLength && parseInt(contentLength) > 0 && !contentType.startsWith("text/html")) {
+            cachedResponse.headers.set('Cache-Control', 'public, max-age=2678400');
+
+            c.executionCtx.waitUntil(cache.put(request, cachedResponse.clone()));
+        }
+    }
 
     // 5 - Retorna resposta
     return cachedResponse;
