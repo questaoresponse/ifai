@@ -394,40 +394,13 @@ async def token():
     else:
         return jsonify({ "result": True })
 
-@app.route("/<route>")
+@app.route("/<path:route>")
 async def route(route):
-    if route in [ "favicon.ico", "firebase-messaging-sw.js", "service-worker.js" ]:
-        return await send_file(f"public/{route}")
+    if "." in route and len(route.split(".")[-1]) <= 4:
+        return await send_from_directory("public", route)
 
-    return await send_file("public/index.html")
-
-@app.route("/favicon.ico")
-async def favicon():
-    return await send_file("public/favicon.ico")
-
-@app.route("/assets/<filename>")
-async def assets_files(filename):
-    return await send_from_directory("public/assets", filename)
-
-@app.route("/static/<filename>")
-async def static_files(filename):
-    return await send_from_directory("public/static", filename)
-
-@app.route('/imagem/<file_id>')
-async def baixar_imagem(file_id):
-    print(file_id)
-    request = service.files().get_media(fileId=file_id)
-    fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
-
-    done = False
-    while done is False:
-        status, done = downloader.next_chunk()
-        print(f"Download {int(status.progress() * 100)}%.")
-    
-    # Volta para o início do buffer
-    fh.seek(0)
-    return await send_file(fh, mimetype='image/jpeg')
+    else:
+        return await send_file("public/index.html")
 
 @app.route("/logout", methods=["POST"])
 async def logout():
