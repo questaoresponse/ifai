@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 
-import { getToken, initializeFirebase, messaging, setUser } from './Functions';
+import { getToken, initializeFirebase, messaging, setInfos } from './Functions';
 import { type Firestore } from 'firebase/firestore';
 import auth from './Auth';
 import { SocketClient } from './SocketClient';
@@ -51,16 +51,11 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
     const logout = () => {
         auth.get(worker_server + "/logout").then(result=>{
             if (result.data.result){
-                setUser(undefined);
+                setInfos({ user: undefined, worker_server });
                 setUsuarioLogado(undefined);
                 socketClient!.socket.close();
             }
         });
-        // getAuth().signOut().then(() => {
-        //     auth.post(server + "/logout", { user_uid: usuarioLogado!.uid });
-        //     setUser(undefined);
-        //     setUsuarioLogado(undefined);
-        // });
     }
 
     const verifyMobile = () => {
@@ -116,7 +111,7 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
                     
                     });
 
-                    setUser(user);
+                    setInfos({ user, worker_server });
                     setUsuarioLogado(user);
                 }
                 
@@ -138,7 +133,7 @@ export const GlobalProvider: React.FC<{ setShow: any, children: React.ReactNode 
         //     if (user){
         //         getDocs(query(collection(db.current!, "usuarios"), where("uid", "==", user.uid))).then(results => {
         //             const currentUser = results.docs[0].data();
-        //             setUser(currentUser);
+        //             setInfos({ user: currentUser, worker_server });
         //             setUsuarioLogado(user);
         //         });
 

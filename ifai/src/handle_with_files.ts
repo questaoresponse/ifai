@@ -20,9 +20,13 @@ app.post("/perfil", async (c: MyContext) => {
     }
 
     const logo = results.results[0].logo as string | null;
+
     if (logo){
         formData.append("file_to_remove", logo);
     }
+
+    const timestamp = Date.now();
+    formData.append("timestamp", String(timestamp));
 
 
     // Repasse o corpo da requisição recebida para o fetch de upload
@@ -42,6 +46,39 @@ app.post("/perfil", async (c: MyContext) => {
   } catch (err) {
     return c.text('Erro no proxy de upload: ' + String(err), 500)
   }
+});
+
+app.post("/posts", async (c: MyContext) => {
+    try {
+        const uid = c.get("user").uid;
+        const origin = c.get("origin");
+
+        const formData = await c.req.raw.formData();
+
+        const description = formData.get("description");
+        const type = 0;
+        const timestamp = Date.now();
+        const id = Math.floor(timestamp / 1000) * Math.floor(Math.random() * 999);
+
+        formData.append("timestamp", String(timestamp));
+
+        // Repasse o corpo da requisição recebida para o fetch de upload
+
+        const response = await send_to_server(origin, "/posts", formData, false);
+
+        const response_json = await response.json() as { [key:string]: any };
+
+        const file_id = response_json.file_id;
+        
+        await c.env.DB.prepare("INSERT INTO posts(description,image,timestamp,type,userUid,id) VALUES(?,?,?,?,?,?)")
+            .bind(description,file_id,timestamp,type,uid,id)
+            .run()
+
+        return c.json({ result: true, file_id });
+
+    } catch (err) {
+        return c.text('Erro no proxy de upload: ' + String(err), 500)
+    }
 });
 }
 

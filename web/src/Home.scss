@@ -7,4 +7,33 @@
         padding-bottom: 5px;
         border-bottom: solid 1px gray;
     }
+    .carousel {
+        overflow: hidden;
+        cursor: grab;
+        width: 100%;
+        border: 1px solid #ccc;
+    }
+
+    .carousel:active {
+        cursor: grabbing;
+    }
+
+    .inner-carousel {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .item {
+        min-width: 200px;
+        height: 120px;
+        border-radius: 8px;
+        background-color: #1e90ff;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 }

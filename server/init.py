@@ -1,4 +1,7 @@
 import os
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getcwd() + "/../service_account.json"
+
 import pickle
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
@@ -12,6 +15,7 @@ def load_creds():
         if creds and creds.valid:
             return creds
         elif creds and creds.expired and creds.refresh_token:
+            # return None
             creds.refresh(Request())
             return creds
 

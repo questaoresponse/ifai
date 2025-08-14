@@ -25,6 +25,16 @@ export async function AuthMiddleware(c: Context, next: Next) {
         c.set('user', { name: arr[0], uid: arr[1] });
         c.set('f_token', getCookie(c, 'f_token'));
 
+        var origin = (c.req.header('X-Forwarded-Host') || c.req.header("host"))!;
+
+        if (origin.startsWith("localhost")){
+            origin = "https://6v9s4f5f-8787.brs.devtunnels.ms";
+        } else {
+            origin = "https://" + origin;
+        }
+
+        c.set("origin", origin);
+
         // Continua para o handler
         await next();
     } catch (err) {

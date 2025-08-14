@@ -3,10 +3,10 @@ import asyncio
 import json
 import os
 import time
-import io
+import io as fileIo
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
 import httpx
-from quart import Quart, send_file, send_from_directory, request, jsonify, make_response
+from quart import Quart, send_file, send_from_directory, request, Response, jsonify, make_response
 from quart_cors import cors
 import socketio
 import uvicorn
@@ -17,12 +17,10 @@ from init import get_drive_service, get_firebase_db, get_messaging
 
 io = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins='*',
     ping_interval = 10,
     ping_timeout = 5
 )
 app = Quart(__name__)
-app = cors(app, allow_origin="http://localhost:5173", allow_credentials=True)  # ou use um domínio específico
 asgi_app = socketio.ASGIApp(io, app)
 
 app.config["UPLOAD_FOLDER"] = "uploads"
@@ -93,7 +91,7 @@ def download_file(file_id, destination_path):
         fileId=file_id,
         supportsAllDrives=True
     )
-    fh = io.FileIO(destination_path, 'wb')
+    fh = fileIo.FileIO(destination_path, 'wb')
     downloader = MediaIoBaseDownload(fh, request)
     done = False
     while not done:
@@ -192,16 +190,31 @@ def verify_email(matricula: str):
 #     #     print("Erro:", e)
 #     #     return False
 
+@app.after_request
+async def dynamic_cors(response):
+    origin = request.headers.get("Origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Length"
+    return response
+
 @app.route("/posts", methods=["POST"])
-def posts():
-    FOLDER_ID = "1WzDR-2mhxFKS5ydLcUeroZXeNwxe-uks"
-    content_type = request.content_type or ''
-    if 'application/json' in content_type:
-        return list_files(FOLDER_ID), 200
-    else:
-        timestamp = request.form.get("timestamp")
-        filename = request.files["file"].filename
-        return receive_and_upload_file(FOLDER_ID, f"p_{timestamp}_{filename}"), 200
+async def posts():
+    try:
+        form = await request.form
+        files = await request.files
+    
+        FOLDER_ID = "1WzDR-2mhxFKS5ydLcUeroZXeNwxe-uks"
+        timestamp = form.get("timestamp")
+        filename = files["file"].filename
+
+        data = await receive_and_upload_file(FOLDER_ID, f"p_{timestamp}_{filename}", files)
+
+        return jsonify(data), 200
+    
+    except Exception as e:
+        print(e)
 
 
 @app.route("/comunidades", methods=["POST"])
@@ -238,6 +251,24 @@ async def perfil():
     except Exception as e:
         print(e)
 
+@app.route("/get_file/<file_id>")
+async def download_file(file_id):
+    try:
+
+        file_metadata = service.files().get(fileId=file_id, fields="name,mimeType").execute()
+        mime_type = file_metadata.get("mimeType", "application/octet-stream")
+
+        # URL direta para download
+        request = service.files().get_media(fileId=file_id)
+        # Faz download usando requests com credenciais
+        fh = request.execute()  # retorna bytes
+
+        # Retorna o conteúdo diretamente no GET
+        return Response(fh, mimetype=mime_type)
+
+    except Exception as e:
+        return f"Erro: {str(e)}", 400
+    
 @app.route("/like_action", methods=["POST"])
 async def like_action():
     data = await request.get_json()

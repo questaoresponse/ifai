@@ -3,16 +3,15 @@ import { useGlobal } from "./Global";
 import "./AddPost.scss";
 import no_image from "./assets/static/no-image.jpg";
 import auth from "./Auth";
-import { addDoc, collection } from "firebase/firestore";
 
 function AddPost(){
-    const { db, server, usuarioLogado } = useGlobal();
+    const { worker_server, usuarioLogado } = useGlobal();
 
     const [ srcImage, setSrcImage ] = useState<string>(no_image);
 
     const refs = {
         file: useRef<HTMLInputElement>(null),
-        description: useRef<HTMLInputElement>(null)
+        description: useRef<HTMLDivElement>(null)
     }
 
     const onFileChange = () => {
@@ -33,25 +32,13 @@ function AddPost(){
         if (!usuarioLogado) return;
 
         const file = refs.file.current!.files![0];
-        const description = refs.description.current!.value;
+        const description = refs.description.current!.innerText;
 
-        const timestamp = new Date().getTime();
         // "https://drive.google.com/uc?export=view&id="
         const formData = new FormData();
-        formData.append("type", "upload");
-        formData.append("timestamp", timestamp.toString());
+        formData.append("description", description);
         formData.append("file", file);
-        auth.post(server + "/posts", formData).then(result=>{
-            const post = {
-                type: 0,
-                userUid: usuarioLogado.uid,
-                user: usuarioLogado.name || "",
-                image: result.data.file_id,
-                description,
-                description_lower: description.toLowerCase(),
-                timestamp,
-            }
-            addDoc(collection(db.current!, "posts"), post);
+        auth.post(worker_server + "/posts", formData).then(_=>{
         });
         // uploadBytes(storageRef(getStorage(), `${postUid}/${file.name}`), file)
         //     .then(snapshot=>getDownloadURL(snapshot.ref))
@@ -70,10 +57,11 @@ function AddPost(){
     }
 
     return <div id="add-post" className="page">
-        <img id="img-view" src={srcImage}></img>
-        <div id="label-description">Descrição:</div>
-        <input ref={refs.description} id="description"></input>
-        <div id="add-image" onClick={()=>refs.file.current!.click()}>Adicionar imagem</div>
+        <div id="img-container">
+            <img id="img-view" src={srcImage}></img>
+            <i onClick={()=>refs.file.current!.click()} className="fas fa-pencil-alt"></i>
+        </div>
+        <div aria-multiline={true} ref={refs.description} id="description" contentEditable={true}></div>
         <input id="input-file" ref={refs.file} onChange={onFileChange} type="file" accept="image/jpeg"></input>
         <div id="btn-submit" onClick={submit}>Enviar</div>
     </div>

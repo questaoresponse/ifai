@@ -26,7 +26,7 @@ def base64_to_pickle(base64_txt, output_pickle):
     print(f'Arquivo .pickle restaurado em: {output_pickle}')
 
 
-if (os.path.exists("server/token.pkl")):
+if (os.path.exists("token.pkl")):
     pickle_to_base64(PICKLE_FILE, BASE64_FILE)
 
 else:

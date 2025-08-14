@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router';
 
 import './App.css';
 import "./style.css";
-import { setUser } from './Functions';
-import { getAuth, type User } from 'firebase/auth';
 import { GlobalProvider } from './Global';
 
 import GlobalFunctions from './GlobalFunctions';
@@ -36,13 +34,6 @@ const Renderize = ({ Element } : { Element: any }) => {
 function App() {
 
     const [ show, setShow ] = useState(false);
-
-    useEffect(()=>{
-        getAuth().onAuthStateChanged((user: User | null) => {
-            setUser(user);
-        });
-    },[]);
-
 
     return (
         <GlobalProvider setShow={setShow}>

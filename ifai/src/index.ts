@@ -6,23 +6,10 @@ import { getCookie, setCookie } from "hono/cookie";
 import { encrypt } from "./cryptography";
 import { ChatRoom } from "./ChatRoom";
 import setHandleWithFilesApp from "./handle_with_files";
-
-type ContentfulStatusCode =
-  | 200  // OK
-  | 201  // Created
-  | 400  // Bad Request
-  | 401  // Unauthorized
-  | 403  // Forbidden
-  | 404  // Not Found
-  | 409  // Conflict
-  | 422  // Unprocessable Entity
-  | 500  // Internal Server Error
-  | 502  // Bad Gateway
-  | 503  // Service Unavailable
-  | 504; // Gateway Timeout
+import { get_server_url } from "./utils";
 
 const app = new Hono<HonoInterface>();
-app.use('*', cors({ origin: (origin) => origin || "*", credentials: true}), AuthMiddleware );
+app.use('*', cors({ origin: (origin) => origin || "*", allowHeaders: ["Content-Length", "Content-Type"], credentials: true}), AuthMiddleware );
 
 setHandleWithFilesApp(app);
 
@@ -136,14 +123,7 @@ app.get('/ws', async (c: MyContext) => {
 
     const user = c.get("user");
     const f_token = getCookie(c, "f_token");
-
-    var origin = (c.req.header('X-Forwarded-Host') || c.req.header("host"))!;
-
-    if (origin.startsWith("localhost")){
-        origin = "https://6v9s4f5f-8787.brs.devtunnels.ms";
-    } else {
-        origin = "https://" + origin;
-    }
+    const origin = c.get("origin");
 
     headers.set('X-Variables', jsonToBase64({ f_token, user, origin }));
 
@@ -237,6 +217,34 @@ app.post("/token",async (c: MyContext) => {
     });
 
     return c.json({ result: true, needs_restart: true });
+});
+
+app.get('/get_file/:file_id', async (c: MyContext) => {
+    const origin = c.get("origin");
+    const file_id = c.req.param("file_id");
+    const cache = caches.default;
+    const request = c.req.raw; // Request original do fetch event
+
+    // 1 - Tenta pegar do cache
+    let response = await cache.match(request);
+    if (response) {
+        return new Response(response.body, response);
+    }
+
+    // 2 - Busca no servidor externo
+    const url = get_server_url(origin) + "/get_file/" + file_id;
+    
+    response = await fetch(url);
+
+    // 3 - Clona para poder armazenar no cache
+    const cachedResponse = new Response(response.body, response);
+    cachedResponse.headers.set('Cache-Control', 'public, max-age=2678400');
+
+    // 4 - Salva no cache da borda
+    c.executionCtx.waitUntil(cache.put(request, cachedResponse.clone()));
+
+    // 5 - Retorna resposta
+    return cachedResponse;
 });
 
 export default app;

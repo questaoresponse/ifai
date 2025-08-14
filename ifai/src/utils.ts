@@ -57,6 +57,7 @@ function send_to_server(origin: string, pathname: string, body: any, is_json = t
 
 export {
     get_app_url,
+    get_server_url,
     send_to_room,
     send_to_server
 }

@@ -37,16 +37,10 @@
     width: 90%;
 }
 body {
-  font-family: Arial, sans-serif;
-  background: #d4ded6;
-  color:#1E3231;
-}
-header{
-  display: flex;
-  gap: 10px;
+  background: #ffffff;
 }
 .defli{
-    color: #1E3231;
+  color: #1E3231;
   font-family: "Open Sans","Lato",sans-serif;
   font-size: 1.3rem;
   outline: 0 none;
@@ -56,15 +50,6 @@ header{
   align-self: flex-end;
   list-style: none;
   margin: 0;
-}
-header {
-  background: #1E3231;
-  color: #fff;
-  padding: 1rem;
-  text-align: center;
-}
-aside{
-  background: #1E3231;
 }
 button{
   background: #347b3e;

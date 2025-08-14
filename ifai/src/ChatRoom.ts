@@ -3,7 +3,7 @@ import setFriendsApp from "./friends";
 import { SocketServer } from "./SocketServer";
 import { ExtendedBindings, Variables } from "./types";
 import setUserApp from "./user";
-import setWebsocketApp from "./websocket";
+import setFeedApp from "./feed";
 
 function base64ToJson(base64: string) {
     const binary = atob(base64);
@@ -59,7 +59,7 @@ export class ChatRoom {
         setFriendsApp(socketServer);
         setChatsApp(socketServer);
         setUserApp(socketServer);
-        setWebsocketApp(socketServer);
+        setFeedApp(socketServer);
 
         server.addEventListener('close', () => {
             // Remove da lista quando desconectar

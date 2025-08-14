@@ -14,6 +14,7 @@ declare global {
 }
 
 let usuarioLogado: User | null = null;
+let worker_server: string | null = null;
 
 // Assuming 'db' is your initialized Firestore instance (from Step 4)
 
@@ -184,13 +185,14 @@ function formatMessageTime(date: Date) {
   return `${formatTimeSegment(date.getHours())}:${date.getMinutes().toString().padStart(2, "0")}`;
 }
 
-const setUser = (user: any) => {
-    usuarioLogado = user;
+const setInfos = (infos: { [key: string]: any }) => {
+    usuarioLogado = infos.user;
+    worker_server = infos.worker_server;
 }
 
 const getDriveURL = (file_id: string) => {
 
-  return `https://lh3.googleusercontent.com/u/0/d/${file_id}=w1366-h607-iv1?auditContext=forDisplay`;
+  return `${worker_server}/get_file/${file_id}`;
 }
 
 export {
@@ -200,7 +202,7 @@ export {
     atualizarNotificacoesChat,
     initializeFirebase,
     marcarMensagensComoLidas,
-    setUser,
+    setInfos,
     formatMessageTime,
     formatTimeBetweenMessages,
     getDriveURL

@@ -13,9 +13,15 @@
         padding-top: 5px;
         padding-bottom: 5px;
         margin-right: 5px;
-      
+        border-radius: 5px;
+    }
+    i{
+        margin-right: 5px;
     }
     .tools-item:hover{
         background-color: darkgreen;
+    }
+    .tools-title{
+        margin-bottom: 10px;
     }
 }

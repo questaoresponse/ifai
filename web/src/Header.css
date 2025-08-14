@@ -1,13 +1,14 @@
-#sidebar{
+#header{
     position: fixed;
     left: 0;
     height: 50px;
     width: 100%;
     transition: width 0.3s;
-    background: #1E3231;
+    /* background: white; */
     display: flex;
     flex-direction: column;
     z-index: 999;
+    border-top: solid 1px green;
 }
 
 .defbtn{
@@ -35,7 +36,7 @@
     -webkit-tap-highlight-color: transparent;
 }
 .selected{
-    opacity: 0.5;
+    opacity: 0.75;
 }
 #mainnav{
   width: 100%;
@@ -61,7 +62,7 @@ width: auto;
     display: none;
 }
 
-#sidebar.collapsed #searchResults{
+#header.collapsed #searchResults{
     display: none;
 }
 
@@ -171,11 +172,18 @@ width: auto;
     margin-left: 22.5px;
 }
 
+#header i, #header svg{
+    color: #347b3e;
+    
+}
+
 @media screen and (min-width: 769px) {
-    #sidebar{
+    #header{
         top: 0;
         width: 75px;
         height: 100%;
+        border-top: initial;
+        border-right: solid 1px rgb(27, 190, 62);
     }
     #sidebar-content{
         display: initial;

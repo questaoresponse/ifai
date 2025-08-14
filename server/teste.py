@@ -17,8 +17,14 @@ def authenticate_and_save_token():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials2.json', SCOPES)
-            creds = flow.run_local_server(port=1111)
+                'credentials.json',
+                SCOPES
+            )
+            creds = flow.run_local_server(
+                port=1111,
+                access_type='offline',
+                prompt='consent'
+            )
 
         # Salva credenciais para uso futuro
         with open('token.pkl', 'wb') as token:

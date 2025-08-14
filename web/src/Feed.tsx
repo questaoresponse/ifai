@@ -97,7 +97,7 @@ function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
             // const data = await response.json();
             // const { data  } = await auth.get(worker_server + "/feed");
             console.time("ai")
-            const data = await socket.send("/feed", {});
+            const data = await socket.send("/feed", { perfil_uid: userPerfilUid });
             console.timeEnd("ai")
             // const data = await response.json();
             // const users = ["Amz55DlZ91cPb2fzycRS7hNNugA2"]
@@ -107,7 +107,7 @@ function Feed({ userPerfilUid }: { userPerfilUid: string |null }){
             //         const doc = result.data();
             //         infos[doc.uid] = { logo: doc.fotoPerfil? getDriveURL(doc.fotoPerfil) : avatar_src, name: doc.nome  };
             //     }
-                setPosts(data.results.map((doc:any)=>{const data = doc; return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: data.logo || avatar_src, user: data.name }}) as postsInterface[]);
+                setPosts(data.posts.map((doc:any)=>{const data = doc; return {...data, data: processData(data.timestamp), image: getDriveURL(data.image), logo: data.logo ? getDriveURL(data.logo) : avatar_src, user: data.name }}) as postsInterface[]);
                 
                 // const infos: any = {"Amz55DlZ91cPb2fzycRS7hNNugA2":{
                 //     logo: "/src/assets/static/avatar.png",

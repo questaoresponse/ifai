@@ -52,11 +52,7 @@ const Perfil = () => {
 
     function atualizarFotoPerfil(file: any) {
         const formData = new FormData();
-        const timestamp =  new Date().getTime().toString();
-        formData.append("type", "update");
-        formData.append("timestamp", timestamp.toString());
         formData.append("file", file);
-        formData.append("user_uid", usuarioLogado!.uid);
 
         auth.post(worker_server + "/perfil", formData).then(result=>{
             // update(dbRef(getDatabase(), "usuarios/" + usuarioLogado!.uid), { fotoPerfil: result.data.file_id })

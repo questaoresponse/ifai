@@ -1,8 +1,31 @@
 #add-post{
+    #img-container{
+        width: 100%;
+        aspect-ratio: 4/5;
+        border-radius: 20px;
+    }
     #img-view{
         width: 100%;
-        aspect-ratio: 16/9;
-        border-radius: 20px;
+        height: 100%;
+        object-fit: cover;
+    }
+    .fas{
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        top: 0;
+        margin-top: calc(100% + 45px);
+        margin-left: calc(100% - 45px);
+        left: 0;
+        
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px; /* Adjust if using an icon font */
     }
     #add-image{
         margin-top: 5px;
@@ -44,6 +67,14 @@
     #btn-submit:hover{
         color: #248232;
         background-color: white;
+    }
+    #description{
+        width: 100%;
+        outline: none;
+        border: none;
+    }
+    #description:focus{
+        border: solid 1px gray;
     }
     @media screen and (min-width: 769px){
         #img-view{
