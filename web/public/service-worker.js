@@ -72,7 +72,10 @@ self.addEventListener('fetch', (event) => {
 
         const response = await fetch(req);
 
-        cache.put(req, response.clone());
+        const contentLength = response.headers.get("Content-Length");
+        if (contentLength && parseInt(contentLength) > 0) {
+            return cachedResponse;
+        }
 
         return response;
     })());

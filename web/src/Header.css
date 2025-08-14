@@ -174,7 +174,10 @@ width: auto;
 
 #header i, #header svg{
     color: #347b3e;
-    
+}
+#header svg{
+    width: 20px;
+    height: 20px;
 }
 
 @media screen and (min-width: 769px) {

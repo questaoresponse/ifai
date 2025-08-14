@@ -21,6 +21,7 @@ import Header from './Header';
 import AddPost from './AddPost';
 import Search from './Search';
 import Settings from './Settings';
+import InstallPWA from './InstallPWA';
 
 const Renderize = ({ Element } : { Element: any }) => {
     return <>
@@ -60,6 +61,7 @@ function App() {
                     <img src={logo_src} width="150px"/>
                 </div>
             </div>}
+            <InstallPWA></InstallPWA>
         </GlobalProvider>
     )
     }
