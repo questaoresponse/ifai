@@ -24,8 +24,8 @@ cursor = conn.cursor()
 #     id INTEGER UNIQUE
 # )""")
 # cursor.execute("""ALTER TABLE users ADD description TEXT""")
-# cursor.execute("""UPDATE users SET description=''""")
-# conn.commit()
+cursor.execute("""UPDATE users SET description='{}'""")
+conn.commit()
 cursor.execute("SELECT name,tokens FROM users")
 for row in cursor.fetchall():
     print(row)

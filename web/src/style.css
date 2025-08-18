@@ -179,19 +179,10 @@ form button {
   place-items: center; 
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   font-size: 16px;
-  opacity: 0;
-  transition: opacity 0.3s;
 }
 
 .edit-icon i {
   margin: auto;
-}
-.avatar-wrapper:hover .edit-icon {
-  opacity: 1;
-  cursor: pointer;
-}
-.avatar-wrapper:hover:not(.edit-icon, .edit-icon i) img{
-  filter: brightness(0.8);
 }
 
 #friendList {

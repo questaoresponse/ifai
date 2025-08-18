@@ -25,8 +25,13 @@ enum TypeUser {
     professor = 1
 }
 
+interface Description {
+    text?: string
+}
+
 interface Perfil {
     curso: Cursos,
+    description: Description,
     matricula: string,
     name: string,
     nFriends: number,
@@ -37,9 +42,10 @@ interface Perfil {
 
 const Perfil = () => {
     const { socket, worker_server, usuarioLogado } = useGlobal();
-    const [perfil, setPerfil ] = useState<Perfil>({ name: "", nFriends: 0, logo: avatar_src, typeUser: TypeUser.aluno, uid: "", matricula: "", curso: Cursos.LOAD });
+    const [perfil, setPerfil ] = useState<Perfil>({ curso: Cursos.LOAD, description: {}, name: "", nFriends: 0, logo: avatar_src, typeUser: TypeUser.aluno, uid: "", matricula: "" });
     const [editingPerfil, setEditingPerfil] = useState(false);
-    const previousLogoContent = useRef<string | null>(null);
+    const previousLogoContent = useRef<string>(avatar_src);
+    const previousDescriptionValue = useRef<Description>({});
 
     const navigate = useNavigate();
 
@@ -47,7 +53,7 @@ const Perfil = () => {
         avatar: useRef<HTMLImageElement>(null),
         fileInput: useRef<HTMLInputElement>(null),
         removePhotoBtn: useRef<HTMLButtonElement>(null),
-        descriptions: useRef<HTMLDivElement>(null),
+        description: useRef<HTMLDivElement>(null),
     }
 
     const goToChat = () => {
@@ -88,21 +94,38 @@ const Perfil = () => {
     const savePerfilChanges = () => {
         const formData = new FormData();
         
-        if (refs.fileInput.current!.files!.length > 0){
-            formData.append("file", refs.fileInput.current!.files![0]);
-            formData.append("operation", "add-file");
+        if (previousLogoContent.current != perfil.logo){
+            if (refs.fileInput.current!.files!.length > 0){
+                formData.append("file", refs.fileInput.current!.files![0]);
+                formData.append("operation", "add-file");
+            } else {
+                formData.append("operation", "remove-file");
+            }
         } else {
-            formData.append("operation", "remove-file");
+            formData.append("operation", "update-only-description");
         }
+        const description = {
+            text: refs.description.current!.innerText
+        }
+        formData.append("description", description.text || "");
+
+        previousLogoContent.current = perfil.logo;
+        previousDescriptionValue.current = description;
 
         auth.post(worker_server + "/perfil", formData).then(result=>{
-            refs.avatar.current!.src = getDriveURL(result.data.file_id);
-            refs.removePhotoBtn.current!.style.display = "block";
+            if (result.data.result){
+                setEditingPerfil(false);
+                
+                if (result.data.file_id){
+                    refs.avatar.current!.src = getDriveURL(result.data.file_id);
+                }
+            }
         });
     }
 
     const cancelEditingPerfil = () => {
         setEditingPerfil(false);
+        refs.description.current!.innerText = perfil.description.text || "";
         // if (previousLogoContent.currentFile.){
         //     const dataTransfer = new DataTransfer()
         //     dataTransfer.items.add(previousFile.current! as File)
@@ -110,7 +133,7 @@ const Perfil = () => {
         //     refs.fileInput.current!.files = dataTransfer.files;
         // } else {
         // }
-        setPerfil(perfil=>{ return {...perfil, logo: previousLogoContent.current! }});
+        setPerfil(perfil=>{ return {...perfil, description: previousDescriptionValue.current, logo: previousLogoContent.current! }});
     }
 
     const removerFotoPerfil = () => {
@@ -119,6 +142,7 @@ const Perfil = () => {
         if (fileInput) {
             fileInput.value = ""; // Clear the file input
         }
+
     }
 
     useEffect(()=>{
@@ -132,8 +156,10 @@ const Perfil = () => {
                 socket.send("/perfil", { uid }).then(result=>{
                     if (result.result){
                         const userData = result.perfil;
+                        const description =  JSON.parse(userData.description);
                         const perfil = {
                             curso: Cursos[userData.matricula.split("111")[1].split("0")[0] as keyof typeof Cursos],
+                            description: description,
                             matricula: userData.matricula,
                             name: userData.name || "Usuário",
                             nFriends: userData.nFriends,
@@ -142,20 +168,9 @@ const Perfil = () => {
                             uid: userData.uid
                         }
                         setPerfil(perfil);
+                        refs.description.current!.innerText = perfil.description.text;
                         previousLogoContent.current = perfil.logo;
-
-
-                        if (usuarioLogado && usuarioLogado!.uid === uid) {
-                            refs.avatar.current!.style.cursor = "pointer";
-
-                            refs.removePhotoBtn.current!.addEventListener("click", removerFotoPerfil);
-
-                            refs.removePhotoBtn.current!.style.display = userData.logo ? "block" : "none"; 
-                        } else {
-                            refs.removePhotoBtn.current!.style.display = "none"; 
-                        }
-                    } else {
-                        document.getElementById("profileName")!.textContent = "Usuário não encontrado";
+                        previousDescriptionValue.current = perfil.description;
                     }
                 })
                 .catch((error: any) => {
@@ -186,13 +201,13 @@ const Perfil = () => {
                                 src={perfil.logo} 
                                 alt="Avatar do usuário" 
                                 id="avatar" 
-                                style={{ cursor: usuarioLogado && perfil && usuarioLogado.uid === perfil.uid ? 'pointer' : 'default' }}
                             />
-                            {usuarioLogado && perfil && usuarioLogado.uid === perfil.uid && (
+                            {editingPerfil && usuarioLogado!.uid === perfil.uid && <div id="edit-logo-btns-div">
                                 <div className="edit-icon" id="editIcon" onClick={handleEditIconClick} style={{ cursor: 'pointer' }}>
                                     <i className="fas fa-pencil-alt"></i>
                                 </div>
-                            )}
+                                { perfil.logo != avatar_src ? <i id="removeLogoBtn" onClick={removerFotoPerfil} className="fa-solid fa-xmark" aria-hidden="true"></i> : <></> }
+                            </div>}
                         </div>
                     </div>
                     <div id="profile-info">
@@ -209,24 +224,6 @@ const Perfil = () => {
                         </div>
                     </div>
                 </div>
-
-                {editingPerfil && (
-                    <button
-                        id="removePhotoBtn"
-                        onClick={removerFotoPerfil}
-                        style={{
-                            marginTop: '10px',
-                            backgroundColor: 'red',
-                            color: 'white',
-                            border: 'none',
-                            padding: '5px 10px',
-                            borderRadius: '5px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Remover Foto
-                    </button>
-                )}
                 <input
                     ref = {refs.fileInput}
                     type="file"
@@ -235,8 +232,7 @@ const Perfil = () => {
                     accept="image/*"
                     onChange={handleFileChange}
                 />
-                <br />
-                <div className="description"></div>
+                <div ref={refs.description} id="description" className={editingPerfil ? "editable" : ""} contentEditable={editingPerfil}></div>
                 <div className="user-type-indicator">
                     {perfil && (
                         <>
@@ -255,11 +251,11 @@ const Perfil = () => {
                         </>
                     )}
                 </div>
-                { editingPerfil ? <div id='edit-perfil-btns'>
-                    <div id='save-edit-perfil' onClick={savePerfilChanges}>Salvar</div>
-                    <div id='cancel-edit-perfil' onClick={cancelEditingPerfil}>Cancelar</div>
+                { editingPerfil ? <div id='edit-perfil-btns-div'>
+                    <div id='save-edit-perfil' className='edit-perfil-btns' onClick={savePerfilChanges}>Salvar</div>
+                    <div id='cancel-edit-perfil' className='edit-perfil-btns' onClick={cancelEditingPerfil}>Cancelar</div>
                 </div>:
-                <div id='edit-perfil'onClick={()=>setEditingPerfil(true)}>Editar perfil</div> }
+                <div id='edit-perfil' className='edit-perfil-btns' onClick={()=>setEditingPerfil(true)}>Editar perfil</div> }
             </section>
             <Feed userPerfilUid={perfil ? perfil.uid : ""}></Feed>
         </main>

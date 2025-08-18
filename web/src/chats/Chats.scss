@@ -154,21 +154,25 @@
     .chat-right{
         width: calc(100% - 60px);
     }
+    .chat-right-top{
+        display: flex;
+    }
     .chat-name{
-        display: inline-block;
+        display: inline-flexbox;
+        flex: 1;
         font-weight: 700;
         color: gray;
-        width: calc(100% - 41px);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     .chat-message-time{
-        display: inline-block;
+        display: inline-flex;
         font-size: 14px;
         font-weight: 500;
         color: green;
         margin-left: 5px;
+        align-items: center;
     }
     .chat-message-text{
         width: calc(100% - 21px);

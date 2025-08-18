@@ -52,7 +52,7 @@ app.post("/registro", async (c: MyContext) => {
         }
 
         const name_ascii = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const description = "";
+        const description = JSON.stringify({});
         const nFriends = 0;
         const timestamp = Math.floor(Date.now() / 1000);
         const tokens = JSON.stringify({});

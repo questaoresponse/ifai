@@ -1,5 +1,5 @@
 import { useEffect, memo, useState, useRef } from "react";
-import { getDriveURL, formatMessageTime } from "../Functions";
+import { getDriveURL, formatTimeHistory } from "../Functions";
 import { useGlobal } from "../Global";
 import { Link, useLocation } from "react-router-dom";
 import avatar_src from "../assets/static/avatar.png";
@@ -145,7 +145,7 @@ function History(){
                 <div className="chat-right">
                     <div className="chat-right-top">
                         <div className="chat-name">{chat.name}</div>
-                        {chat.message ? <div className="chat-message-time">{formatMessageTime(chat.message!.date)}</div> : <></>}
+                        {chat.message ? <div className="chat-message-time">{formatTimeHistory(chat.message!.date)}</div> : <></>}
                     </div>
                     {chat.message ? <div className="chat-right-bottom">
                         <div className="chat-message-text">{chat.message!.text}</div>

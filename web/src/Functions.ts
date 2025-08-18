@@ -185,6 +185,48 @@ function formatMessageTime(date: Date) {
   return `${formatTimeSegment(date.getHours())}:${date.getMinutes().toString().padStart(2, "0")}`;
 }
 
+function formatTimeHistory(date: Date) {
+    const now = new Date();
+    const diff = (now as any) - (date as any);
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    const months = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro"
+    ]
+    
+    const days = [
+        "Segunda",
+        "Terça",
+        "Quarta",
+        "Quinta",
+        "Sexta",
+        "Sábado",
+        "Domingo",
+    ];
+
+    if (diff < oneDay && date.getDate() === now.getDate()) {
+        return formatMessageTime(date)
+    } else if (diff < oneDay * 2 && date.getDate() === now.getDate() - 1) {
+        return `Ontem`;
+    } else if (diff < 7 * 24 * 60 * 60 * 1000) {
+        return days[date.getDay()];
+    } else {
+        return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
+    }
+
+}
+
 const setInfos = (infos: { [key: string]: any }) => {
     usuarioLogado = infos.user;
     worker_server = infos.worker_server;
@@ -205,5 +247,6 @@ export {
     setInfos,
     formatMessageTime,
     formatTimeBetweenMessages,
+    formatTimeHistory,
     getDriveURL
 };

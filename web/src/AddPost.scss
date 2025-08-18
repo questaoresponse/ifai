@@ -1,5 +1,6 @@
 #add-post{
     #img-container{
+        position: relative;
         width: 100%;
         aspect-ratio: 4/5;
         border-radius: 20px;
@@ -13,11 +14,8 @@
         position: absolute;
         width: 30px;
         height: 30px;
-        top: 0;
-        margin-top: calc(100% + 45px);
-        margin-left: calc(100% - 45px);
-        left: 0;
-        
+        bottom: 10px;
+        right: 5px;
         background-color: rgba(0, 0, 0, 0.6);
         color: white;
         border-radius: 50%;
@@ -69,16 +67,17 @@
         background-color: white;
     }
     #description{
-        width: 100%;
-        outline: none;
-        border: none;
+        position: relative;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        border: solid 1px #e0e0e0;
     }
     #description:focus{
-        border: solid 1px gray;
+        outline: solid 1px rgb(210, 210, 210);
     }
     @media screen and (min-width: 769px){
-        #img-view{
-            width: 15vw;
+        #post-container{
+            width: 30vw;
         }
     }
 }
