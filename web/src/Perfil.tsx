@@ -41,6 +41,7 @@ const Perfil = () => {
     const [avatarSrc, setAvatarSrc] = useState<string>(avatar_src);
     const [showRemovePhotoButton, setShowRemovePhotoButton] = useState<boolean>(false);
     const [currentUser, setCurrentUser] = useState<Perfil | null>(null);
+    const [editingPerfil, setEditingPerfil] = useState(false);
 
     const navigate = useNavigate();
 
@@ -108,7 +109,14 @@ const Perfil = () => {
         }
     };
 
-        useEffect(()=>{
+    const savePerfilChanges = () => {
+    }
+
+    const cancelEditingPerfil = () => {
+        
+    }
+
+    useEffect(()=>{
         if (usuarioLogado){
             function getQueryParam(param: any) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -169,6 +177,9 @@ const Perfil = () => {
     return <>
         <main id="perfil-page" className='page'>
             <section id="perfil">
+                <Link to="/settings">
+                    <i id="btn-menu" className="fa-solid fa-ellipsis-vertical"></i>
+                </Link>
                 <div id="profile-content">
                     <div className="avatar-container">
                         <div className="avatar-wrapper">
@@ -227,9 +238,7 @@ const Perfil = () => {
                     onChange={handleFileChange}
                 />
                 <br />
-                <Link to="/settings">
-                    <i id="btn-menu" className="fa-solid fa-ellipsis-vertical"></i>
-                </Link>
+                <div className="description"></div>
                 <div className="user-type-indicator">
                     {currentUser && (
                         <>
@@ -248,6 +257,9 @@ const Perfil = () => {
                         </>
                     )}
                 </div>
+                <div id='edit-perfil'onClick={()=>setEditingPerfil(true)}>Editar perfil</div>
+                <div id='save-edit-perfil' onClick={savePerfilChanges}></div>
+                <div id='cancel-edit-perfil' onClick={cancelEditingPerfil}></div>
             </section>
             <Feed userPerfilUid={currentUser ? currentUser.uid : ""}></Feed>
         </main>

@@ -52,13 +52,14 @@ app.post("/registro", async (c: MyContext) => {
         }
 
         const name_ascii = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const description = "";
         const nFriends = 0;
         const timestamp = Math.floor(Date.now() / 1000);
         const tokens = JSON.stringify({});
         const uid = encodeToBase64(timestamp * 1000 + Math.floor(Math.random() * 999));
 
-        await c.env.DB.prepare("INSERT INTO users(email,id,matricula,name,name_ascii,password,nFriends,timestamp,tokens,uid) VALUES(?,?,?,?,?,?,?,?,?,?)")
-            .bind(email,id,matricula,name,name_ascii,password,nFriends,timestamp,tokens,uid)
+        await c.env.DB.prepare("INSERT INTO users(email,id,matricula,name,name_ascii,description,password,nFriends,timestamp,tokens,uid) VALUES(?,?,?,?,?,?,?,?,?,?,?)")
+            .bind(email,id,matricula,name,name_ascii,description,password,nFriends,timestamp,tokens,uid)
             .run();
 
         setCookie(c, "token", await encrypt(JSON.stringify([name,uid])), {
@@ -220,6 +221,7 @@ app.post("/token",async (c: MyContext) => {
 });
 
 app.get('/get_file/:file_id', async (c: MyContext) => {
+    try {
     const origin = c.get("origin");
     const file_id = c.req.param("file_id");
     const cache = caches.default;
@@ -256,6 +258,22 @@ app.get('/get_file/:file_id', async (c: MyContext) => {
 
     // 5 - Retorna resposta
     return cachedResponse;
+    } catch (e: any) {
+        return c.text(e.message);
+    }
+});
+
+app.notFound(async (c: any) => {
+    const origin = c.get("origin");
+    const parts = c.req.path.split(".");
+    const extension = parts[parts.length-1];
+    if (parts.length > 1 && extension.length <= 4){
+        return await c.env.ASSETS.fetch(new Request(origin + c.req.path));
+    } else {
+        const sa = await c.env.ASSETS.fetch(new Request(origin + "/index.html"));
+        console.log(sa);
+        return sa
+    }
 });
 
 export default app;

@@ -23,7 +23,8 @@ cursor = conn.cursor()
 #     chat_id INTEGER,
 #     id INTEGER UNIQUE
 # )""")
-# cursor.execute("""UPDATE messages SET visualized=time""")
+# cursor.execute("""ALTER TABLE users ADD description TEXT""")
+# cursor.execute("""UPDATE users SET description=''""")
 # conn.commit()
 cursor.execute("SELECT name,tokens FROM users")
 for row in cursor.fetchall():

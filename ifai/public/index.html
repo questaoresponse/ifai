@@ -1,37 +1,18 @@
 <!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
-	</head>
-	<body>
-		<h1 id="heading"></h1>
-		<script>
-const socket = new WebSocket("/ws");
-
-// Evento quando conexão abrir
-socket.addEventListener("open", () => {
-	console.log("Conectado ao WebSocket");
-	setInterval(()=>socket.send(Date.now()),5000)
-});
-
-// Evento quando receber mensagem do servidor
-socket.addEventListener("message", (event) => {
-	console.log(Date.now() - Number(event.data));
-	// console.log("Mensagem recebida:", event.data);
-});
-
-// Evento quando conexão fechar
-socket.addEventListener("close", () => {
-	console.log("Conexão fechada");
-});
-
-// Evento de erro
-socket.addEventListener("error", (event) => {
-	console.error("Erro no WebSocket:", event);
-});
-
-		</script>
-	</body>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IFaí</title>
+    <script src="https://kit.fontawesome.com/9807db5824.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/assets/index-C7foeoBY.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-XehlDzfG.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

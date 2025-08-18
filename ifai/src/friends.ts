@@ -34,8 +34,8 @@ app.on("/friends", async (c) => {
             return { result: true, results: results.results };
 
         case "get_senders":
-            var results = await c.env.DB.prepare("SELECT u.*, json_array(uid1, uid2)  FROM users u INNER JOIN friends f ON ((u.uid=f.uid1 OR u.uid=f.uid2) AND (?=f.uid1 OR ?=f.uid2)) WHERE f.mode=0 AND u.uid!=?")
-                .bind(uid, uid, uid)
+            var results = await c.env.DB.prepare("SELECT u.*, json_array(uid1, uid2)  FROM users u INNER JOIN friends f ON (u.uid=f.uid1 AND ?=f.uid2) WHERE f.mode=0 AND u.uid!=?")
+                .bind(uid, uid)
                 .all()
             return { result: true, results: results.results };
 
@@ -89,6 +89,17 @@ app.on("/friends", async (c) => {
 
         case "accept_request":
             const { uid_to_accept_request } = body;
+
+            var results = await c.env.DB.prepare("SELECT mode FROM friends WHERE ( uid1 = ? OR uid2 = ?) AND (uid1 = ? OR uid2 = ?)")
+                .bind(uid, uid, uid_to_accept_request, uid_to_accept_request)
+                .all()
+
+            if (results.results.length == 0){
+                return { result: false, mode: -1 }
+            } else if (results.results[0].uid1!=uid_to_accept_request){
+                return { result: false, mode: results.results[0].mode }
+            }
+
             var time = Math.floor(Date.now() / 1000);
             await c.env.DB.prepare("UPDATE friends SET mode = 1, time = ? WHERE uid1 = ? AND uid2 = ?")
                 .bind(time, uid_to_accept_request, uid)

@@ -8,6 +8,6 @@ export default defineConfig({
     host: true
   },
   build: {
-    outDir: '../server/public' // <- Aqui você define o diretório
+    outDir: '../../ifai/public' // <- Aqui você define o diretório
   }
 })
