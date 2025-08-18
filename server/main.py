@@ -236,15 +236,20 @@ async def perfil():
         form = await request.form
         files = await request.files
 
+        data = None
+
         file_to_remove = form.get("file_to_remove")
         if file_to_remove:
             delete_file(file_to_remove)
 
-        FOLDER_ID = "1n4NyCacEBgb-jhnKpCic8aJSciDnNNn4"
-        timestamp = form.get("timestamp")
-        filename = files["file"].filename
+        if form.get("operation") == "add-file": 
+            FOLDER_ID = "1n4NyCacEBgb-jhnKpCic8aJSciDnNNn4"
+            timestamp = form.get("timestamp")
+            filename = files["file"].filename
 
-        data = await receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}", files)
+            data = await receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}", files)
+        else:
+            data = { "file_id": None }
 
         return jsonify(data), 200
     

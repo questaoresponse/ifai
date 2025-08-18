@@ -54,16 +54,11 @@ const Perfil = () => {
     function atualizarFotoPerfil(file: any) {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("operation", "add-file");
 
         auth.post(worker_server + "/perfil", formData).then(result=>{
-            // update(dbRef(getDatabase(), "usuarios/" + usuarioLogado!.uid), { fotoPerfil: result.data.file_id })
-            //     .then(() => {
                     refs.avatar.current!.src = getDriveURL(result.data.file_id);
                     refs.removePhotoBtn.current!.style.display = "block"; 
-            //     })
-            //     .catch((error: any) => {
-            //         console.error("Erro ao atualizar foto de perfil:", error);
-            //     });
         });
     }
 
@@ -99,21 +94,27 @@ const Perfil = () => {
         }
     };
 
-    const handleRemovePhotoClick = (event: any): void => {
-        event.preventDefault(); // Prevent any default button action
+    const savePerfilChanges = () => {
+    }
+
+    const cancelEditingPerfil = () => {
+        
+    }
+
+    const removerFotoPerfil = () => {
         setAvatarSrc(avatar_src); // Reset to default avatar
         setShowRemovePhotoButton(false); // Hide remove button
         const fileInput = document.getElementById('fileInput') as HTMLInputElement;
         if (fileInput) {
             fileInput.value = ""; // Clear the file input
         }
-    };
 
-    const savePerfilChanges = () => {
-    }
-
-    const cancelEditingPerfil = () => {
-        
+        const formData = new FormData();
+        formData.append("type","remove-file");
+        auth.post(worker_server + "/perfil", formData).then(result=>{
+            refs.avatar.current!.src = getDriveURL(result.data.file_id);
+            refs.removePhotoBtn.current!.style.display = "block";
+        });
     }
 
     useEffect(()=>{
@@ -155,16 +156,6 @@ const Perfil = () => {
                 });
             }
 
-            function removerFotoPerfil() {
-                update(dbRef(getDatabase(), "usuarios/" + usuarioLogado!.uid), { fotoPerfil: null })
-                .then(() => {
-                    refs.avatar.current!.src = avatar_src;
-                    refs.removePhotoBtn.current!.style.display = "none"; 
-                })
-                .catch((error: any) => {
-                    console.error("Erro ao remover foto de perfil:", error);
-                });
-            }
             const userIdFromURL = getQueryParam("id");
             if (userIdFromURL) {
                 carregarPerfil(userIdFromURL);
@@ -215,7 +206,7 @@ const Perfil = () => {
                 {showRemovePhotoButton && (
                     <button
                         id="removePhotoBtn"
-                        onClick={handleRemovePhotoClick}
+                        onClick={removerFotoPerfil}
                         style={{
                             marginTop: '10px',
                             backgroundColor: 'red',
