@@ -14,7 +14,7 @@ function get_app_url(origin: string){
         return "http://localhost:5173";
     }
     
-    return "https://ifai-phwn.onrender.com"
+    return "https://ifai.eneagonlosamigos.workers.dev"
 }
 
 function send_to_room(c: ContextInterface, room: string, event: string, message: { [key:string]: any }){
