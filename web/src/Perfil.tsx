@@ -157,6 +157,7 @@ const Perfil = () => {
                     if (result.result){
                         const userData = result.perfil;
                         const description =  JSON.parse(userData.description);
+                        description.text = "";
                         const perfil = {
                             curso: Cursos[userData.matricula.split("111")[1].split("0")[0] as keyof typeof Cursos],
                             description: description,
