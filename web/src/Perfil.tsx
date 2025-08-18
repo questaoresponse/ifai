@@ -245,10 +245,10 @@ const Perfil = () => {
                                 <i className="fa-solid fa-user"></i>
                                 <div>&nbsp;{perfil.curso}</div>
                             </div>
-                            <div id="go-to-chat" className='aluno-tag' onClick={goToChat}>
+                            { usuarioLogado!.uid != perfil.uid && <div id="go-to-chat" className='aluno-tag' onClick={goToChat}>
                                 <i className="fa-solid fa-message"></i>
                                 &nbsp;Mensagem
-                            </div>
+                            </div> }
                         </>
                     )}
                 </div>
