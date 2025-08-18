@@ -9,22 +9,31 @@ app.on("/chats", async (c) => {
     const { variables, body } = c;
     const uid = variables.user.uid;
     try {
-        const results = await c.env.DB.prepare(`SELECT u.*, c.id AS id, 
-            (SELECT json_object(
-                'uid',m.uid,
-                'text',m.text,
-                'type',m.type,
-                'time',m.time,
-                'visualized',visualized, 
-                'new_messages_number', (
-                    SELECT COUNT(*)
-                    FROM messages m2
-                    WHERE m2.chat_id = m.chat_id
-                    AND m2.uid = m.uid
-                    AND m2.visualized = 0
-                )
-            ) FROM messages m WHERE m.chat_id = c.id ORDER BY m.time DESC LIMIT 1
-        ) AS last_message FROM users u INNER JOIN chats c ON ((u.uid = c.uid1 OR u.uid = c.uid2) AND (? = c.uid1 OR ? = c.uid2)) WHERE u.uid!=?`)
+        const results = await c.env.DB.prepare(`WITH messages_ranked AS (
+            SELECT 
+                m.*,
+                ROW_NUMBER() OVER (PARTITION BY chat_id ORDER BY time DESC) AS rn,
+                SUM(CASE WHEN visualized = 0 THEN 1 ELSE 0 END) OVER (PARTITION BY chat_id, uid) AS new_messages_number
+            FROM messages m
+        )
+        SELECT 
+            u.name,
+            u.logo,
+            u.uid,
+            c.id AS id,
+            json_object(
+                'uid', m.uid,
+                'text', m.text,
+                'type', m.type,
+                'time', m.time,
+                'visualized', m.visualized,
+                'new_messages_number', m.new_messages_number
+            ) AS last_message
+        FROM users u
+        INNER JOIN chats c ON ((u.uid = c.uid1 OR u.uid = c.uid2) AND (? = c.uid1 OR ? = c.uid2))
+        LEFT JOIN messages_ranked m ON m.chat_id = c.id AND m.rn = 1
+        WHERE u.uid != ?
+        ORDER BY m.time DESC`)
             .bind(uid, uid, uid)
             .all()
         return { result: true, results: results.results }
