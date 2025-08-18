@@ -46,6 +46,6 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   event.waitUntil(
-    clients.openWindow(event.notification.data?.url || 'https://ifai.eneagonlosamigos.workers.dev')
+    clients.openWindow(event.notification.data?.url || 'https://ifai-phwn.onrender.com')
   );
 });

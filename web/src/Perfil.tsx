@@ -251,11 +251,12 @@ const Perfil = () => {
                         </>
                     )}
                 </div>
-                { editingPerfil ? <div id='edit-perfil-btns-div'>
+                { usuarioLogado!.uid == perfil.uid ? editingPerfil ? <div id='edit-perfil-btns-div'>
                     <div id='save-edit-perfil' className='edit-perfil-btns' onClick={savePerfilChanges}>Salvar</div>
                     <div id='cancel-edit-perfil' className='edit-perfil-btns' onClick={cancelEditingPerfil}>Cancelar</div>
                 </div>:
-                <div id='edit-perfil' className='edit-perfil-btns' onClick={()=>setEditingPerfil(true)}>Editar perfil</div> }
+                <div id='edit-perfil' className='edit-perfil-btns' onClick={()=>setEditingPerfil(true)}>Editar perfil</div>:
+                <></> }
             </section>
             <Feed userPerfilUid={perfil ? perfil.uid : ""}></Feed>
         </main>
