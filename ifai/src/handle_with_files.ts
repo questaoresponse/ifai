@@ -71,12 +71,14 @@ app.post("/posts", async (c: MyContext) => {
 
         const formData = await c.req.raw.formData();
 
+        const deleted = 0;
         const description = formData.get("description");
         const type = 0;
         const timestamp = Date.now();
         const id = Math.floor(timestamp / 1000) * Math.floor(Math.random() * 999);
 
         formData.append("timestamp", String(timestamp));
+        formData.append("operation", "add-file");
 
         // Repasse o corpo da requisição recebida para o fetch de upload
 
@@ -86,8 +88,8 @@ app.post("/posts", async (c: MyContext) => {
 
         const file_id = response_json.file_id;
         
-        await c.env.DB.prepare("INSERT INTO posts(description,image,timestamp,type,userUid,id) VALUES(?,?,?,?,?,?)")
-            .bind(description,file_id,timestamp,type,uid,id)
+        await c.env.DB.prepare("INSERT INTO posts(deleted,description,id,image,timestamp,type,userUid) VALUES(?,?,?,?,?,?,?)")
+            .bind(deleted,description,id,file_id,timestamp,type,uid,)
             .run()
 
         return c.json({ result: true, file_id });

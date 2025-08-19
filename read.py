@@ -23,9 +23,9 @@ cursor = conn.cursor()
 #     chat_id INTEGER,
 #     id INTEGER UNIQUE
 # )""")
-# cursor.execute("""ALTER TABLE users ADD description TEXT""")
-cursor.execute("""UPDATE users SET description='{}'""")
-conn.commit()
+# cursor.execute("""ALTER TABLE posts ADD deleted INTEGER""")
+# cursor.execute("""DELETE FROM posts WHERE timestamp >= 1755565097556""")
+# conn.commit()
 cursor.execute("SELECT name,tokens FROM users")
 for row in cursor.fetchall():
     print(row)

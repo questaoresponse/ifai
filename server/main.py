@@ -204,12 +204,21 @@ async def posts():
     try:
         form = await request.form
         files = await request.files
-    
-        FOLDER_ID = "1WzDR-2mhxFKS5ydLcUeroZXeNwxe-uks"
-        timestamp = form.get("timestamp")
-        filename = files["file"].filename
 
-        data = await receive_and_upload_file(FOLDER_ID, f"p_{timestamp}_{filename}", files)
+        data = None
+
+        file_to_remove = form.get("file_to_remove")
+        if file_to_remove:
+            delete_file(file_to_remove)
+
+        if form.get("operation") and form.get("operation") == "add-file": 
+            FOLDER_ID = "1WzDR-2mhxFKS5ydLcUeroZXeNwxe-uks"
+            timestamp = form.get("timestamp")
+            filename = files["file"].filename
+
+            data = await receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}", files)
+        else:
+            data = { "result": "true", "file_id": None }
 
         return jsonify(data), 200
     
@@ -249,7 +258,7 @@ async def perfil():
 
             data = await receive_and_upload_file(FOLDER_ID, f"pf_{timestamp}_{filename}", files)
         else:
-            data = { "file_id": None }
+            data = { "result": "true", "file_id": None }
 
         return jsonify(data), 200
     

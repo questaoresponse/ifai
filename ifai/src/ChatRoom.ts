@@ -4,6 +4,7 @@ import { SocketServer } from "./SocketServer";
 import { ExtendedBindings, Variables } from "./types";
 import setUserApp from "./user";
 import setFeedApp from "./feed";
+import setPostsApp from "./posts";
 
 function base64ToJson(base64: string) {
     const binary = atob(base64);
@@ -60,6 +61,7 @@ export class ChatRoom {
         setChatsApp(socketServer);
         setUserApp(socketServer);
         setFeedApp(socketServer);
+        setPostsApp(socketServer);
 
         server.addEventListener('close', () => {
             // Remove da lista quando desconectar

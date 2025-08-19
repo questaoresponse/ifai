@@ -421,8 +421,8 @@ form button {
 }
 
 .page{
-    display: block;
     position: relative;
+    display: block;
     height: calc(100% - 50px);
     overflow: auto;
     padding: 10px;

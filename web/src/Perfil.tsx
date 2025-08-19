@@ -125,7 +125,6 @@ const Perfil = () => {
 
     const cancelEditingPerfil = () => {
         setEditingPerfil(false);
-        refs.description.current!.innerText = perfil.description.text || "";
         // if (previousLogoContent.currentFile.){
         //     const dataTransfer = new DataTransfer()
         //     dataTransfer.items.add(previousFile.current! as File)
@@ -146,6 +145,10 @@ const Perfil = () => {
     }
 
     useEffect(()=>{
+        refs.description.current!.innerText = perfil.description.text || "";
+    },[perfil]);
+
+    useEffect(()=>{
         if (usuarioLogado){
             function getQueryParam(param: any) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -157,7 +160,7 @@ const Perfil = () => {
                     if (result.result){
                         const userData = result.perfil;
                         const description =  JSON.parse(userData.description);
-                        description.text = "";
+                        description.text = description.text || "";
                         const perfil = {
                             curso: Cursos[userData.matricula.split("111")[1].split("0")[0] as keyof typeof Cursos],
                             description: description,
@@ -169,7 +172,6 @@ const Perfil = () => {
                             uid: userData.uid
                         }
                         setPerfil(perfil);
-                        refs.description.current!.innerText = perfil.description.text;
                         previousLogoContent.current = perfil.logo;
                         previousDescriptionValue.current = perfil.description;
                     }

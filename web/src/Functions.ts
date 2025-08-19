@@ -189,21 +189,6 @@ function formatTimeHistory(date: Date) {
     const now = new Date();
     const diff = (now as any) - (date as any);
     const oneDay = 24 * 60 * 60 * 1000;
-
-    const months = [
-        "Janeiro",
-        "Fevereiro",
-        "Março",
-        "Abril",
-        "Maio",
-        "Junho",
-        "Julho",
-        "Agosto",
-        "Setembro",
-        "Outubro",
-        "Novembro",
-        "Dezembro"
-    ]
     
     const days = [
         "Segunda",
@@ -222,7 +207,7 @@ function formatTimeHistory(date: Date) {
     } else if (diff < 7 * 24 * 60 * 60 * 1000) {
         return days[date.getDay()];
     } else {
-        return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
+        return `${formatTimeSegment(date.getDate())}/${formatTimeSegment(date.getMonth() + 1)}/${date.getFullYear()}`;
     }
 
 }
