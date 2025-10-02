@@ -1,4 +1,4 @@
-import { ref as dbRef, getDatabase, onValue, push, remove, update } from "firebase/database";
+import { ref as dbRef, getDatabase, onValue, push, remove } from "firebase/database";
 import { useEffect, useRef, useState } from "react";
 import Alert from "./Alert";
 import { ref as storageRef, getDownloadURL, getStorage, uploadBytes } from "firebase/storage";
@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 import "./Comunidades.scss";
 import no_image_src from "./assets/static/avatar.png";
 import no_photo_comunity from "./assets/static/default_comunidade.png";
+import auth from "./Auth";
+import { useGlobal } from "./Global";
 
 const criarDropdownFiltro = (
   filtroOrdenacao: string,
@@ -27,10 +29,25 @@ const criarDropdownFiltro = (
   );
 };
 
+interface Community {
+    banner: string,
+    description: string,
+    id: string,
+    image: string,
+    name: string,
+    members: string,
+    owner: string,
+    privacy: string
+}
+
 function Comunidades(){
+
+    const { worker_server, socket } = useGlobal();
 
     const [ showForm, setShowForm ] = useState(false);
     const showPopup = useRef<any>(null);
+
+    const [ communities, setCommunities ] = useState<Community[]>([]);
 
     const refs = {
         createButton: useRef<HTMLButtonElement>(null),
@@ -85,58 +102,65 @@ function Comunidades(){
     
         const novaChaveComunidade = push(dbRef(getDatabase(), "comunidades")).key;
     
-        function salvarNoDatabase(urlImagemFinal: string) {
-            const agora = Date.now();
     
-            const novaComunidade = {
-            nome: nome,
-            descricao: descricao,
-            imagem: urlImagemFinal,
-            privacidade: privacidade,
-            criador: usuarioAtual.uid,
-            membros: {
-                [usuarioAtual.uid]: true,
-            },
-            timestamp: agora,
-            };
-    
-            const atualizacoes: {[key: string]: any} = {};
-            atualizacoes[`comunidades/${novaChaveComunidade}`] = novaComunidade;
-            atualizacoes[`usuarios/${usuarioAtual.uid}/comunidades/${novaChaveComunidade}`] = true;
-            update(dbRef(getDatabase()), atualizacoes).then(() => {
-                console.log("Comunidade criada com sucesso!");
-                cancelarCriacaoComunidade();
-                // carregarComunidades();
-            })
-            .catch((erro) => {
-                console.error("Erro ao criar comunidade:", erro);
-                showPopup.current("Erro ao criar comunidade: " + erro.message);
-            });
+            // const formData = {
+            //     name: nome,
+            //     description: descricao,
+            //     image: urlImagemFinal,
+            //     privacy: privacidade,
+            //     timestamp: agora,
+            // };
+        const formData = new FormData();
+        formData.append("name", nome);
+        formData.append("description", descricao);
+        formData.append("privacy", privacidade);
+        if (file){
+            formData.append("image", file);
+        }
+        
+        auth.post(worker_server + "/community", formData).then(result=>{
+            if (result.data.result){
+                
+            }
+        });
+        
+            // const atualizacoes: {[key: string]: any} = {};
+            // atualizacoes[`comunidades/${novaChaveComunidade}`] = novaComunidade;
+            // atualizacoes[`usuarios/${usuarioAtual.uid}/comunidades/${novaChaveComunidade}`] = true;
+            // update(dbRef(getDatabase()), atualizacoes).then(() => {
+            //     console.log("Comunidade criada com sucesso!");
+            //     cancelarCriacaoComunidade();
+            //     // carregarComunidades();
+            // })
+            // .catch((erro) => {
+            //     console.error("Erro ao criar comunidade:", erro);
+            //     showPopup.current("Erro ao criar comunidade: " + erro.message);
+            // });
         }
     
-        if (file) {
-            const extensao = file.name.split(".").pop();
-            const nomeArquivo = `comunidades/${novaChaveComunidade}/imagem.${extensao}`;
+        // if (file) {
+        //     const extensao = file.name.split(".").pop();
+        //     const nomeArquivo = `comunidades/${novaChaveComunidade}/imagem.${extensao}`;
     
-            uploadBytes(storageRef(getStorage(), nomeArquivo), file).then((snapshot) => {
-                return getDownloadURL(snapshot.ref);
-            }).then((downloadURL) => {
-                salvarNoDatabase(downloadURL);
-            })
-            .catch((erro) => {
-                console.error("Erro ao fazer upload da imagem:", erro);
-                showPopup.current(
-                "Erro ao enviar imagem. A comunidade será criada com imagem padrão."
-                );
+        //     uploadBytes(storageRef(getStorage(), nomeArquivo), file).then((snapshot) => {
+        //         return getDownloadURL(snapshot.ref);
+        //     }).then((downloadURL) => {
+        //         salvarNoDatabase(downloadURL);
+        //     })
+        //     .catch((erro) => {
+        //         console.error("Erro ao fazer upload da imagem:", erro);
+        //         showPopup.current(
+        //         "Erro ao enviar imagem. A comunidade será criada com imagem padrão."
+        //         );
     
-                const urlPadrao = no_photo_comunity;
-                salvarNoDatabase(urlPadrao);
-            });
-        } else {
-            const urlPadrao = no_photo_comunity;
-            salvarNoDatabase(urlPadrao);
-        }
-    }
+        //         const urlPadrao = no_photo_comunity;
+        //         salvarNoDatabase(urlPadrao);
+        //     });
+        // } else {
+        //     const urlPadrao = no_photo_comunity;
+        //     salvarNoDatabase(urlPadrao);
+        // }
+    // }
     // function mostrarDetalhesComunidade(comunidadeId: string) {
     //     get(dbRef(getDatabase(), "comunidades/" + comunidadeId)).then((snapshot) => {
     //         const comunidade = snapshot.val();
@@ -442,52 +466,56 @@ function Comunidades(){
     }
 
     const [comunidades, setComunidades] = useState<any[]>([]);
-  const [mostrarTodas, setMostrarTodas] = useState(false);
-  const [termoPesquisa, setTermoPesquisa] = useState("");
-  const [filtroOrdenacao, setFiltroOrdenacao] = useState("maisNovos");
+    const [mostrarTodas, setMostrarTodas] = useState(false);
+    const [termoPesquisa, setTermoPesquisa] = useState("");
+    const [filtroOrdenacao, setFiltroOrdenacao] = useState("maisNovos");
 
-  useEffect(() => {
-    const db = getDatabase();
-    const comunidadesRef = dbRef(db, "comunidades");
+    useEffect(() => {
+        socket.send("/communities", { operation: "get_communities" }).then(result=>{
+            setCommunities(result.results.map((result: Community)=>{return {...result, members: JSON.parse(result.members)}}));
+            console.log(result.results)
+        });
+        const db = getDatabase();
+        const comunidadesRef = dbRef(db, "comunidades");
 
-    const unsubscribe = onValue(comunidadesRef, (snapshot) => {
-      const lista: any[] = [];
+        const unsubscribe = onValue(comunidadesRef, (snapshot) => {
+            const lista: any[] = [];
 
-      snapshot.forEach((childSnapshot) => {
-        const comunidade = childSnapshot.val();
-        comunidade.id = childSnapshot.key;
-        comunidade.membroCount = contarMembros(comunidade);
+            snapshot.forEach((childSnapshot) => {
+                const comunidade = childSnapshot.val();
+                comunidade.id = childSnapshot.key;
+                comunidade.membroCount = contarMembros(comunidade);
 
-        const termo = termoPesquisa.toLowerCase().trim();
-        if (
-          termo === "" ||
-          comunidade.nome.toLowerCase().includes(termo) ||
-          (comunidade.descricao &&
-            comunidade.descricao.toLowerCase().includes(termo))
-        ) {
-          lista.push(comunidade);
-        }
-      });
+                const termo = termoPesquisa.toLowerCase().trim();
+                if (
+                    termo === "" ||
+                    comunidade.nome.toLowerCase().includes(termo) ||
+                    (comunidade.descricao &&
+                        comunidade.descricao.toLowerCase().includes(termo))
+                ) {
+                    lista.push(comunidade);
+                }
+            });
 
-      switch (filtroOrdenacao) {
-        case "maisNovos":
-          lista.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-          break;
-        case "maisAntigos":
-          lista.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-          break;
-        case "maisMembros":
-          lista.sort((a, b) => b.membroCount - a.membroCount);
-          break;
-        case "menosMembros":
-          lista.sort((a, b) => a.membroCount - b.membroCount);
-          break;
-      }
+            switch (filtroOrdenacao) {
+                case "maisNovos":
+                lista.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                break;
+                case "maisAntigos":
+                lista.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                break;
+                case "maisMembros":
+                lista.sort((a, b) => b.membroCount - a.membroCount);
+                break;
+                case "menosMembros":
+                lista.sort((a, b) => a.membroCount - b.membroCount);
+                break;
+            }
 
-      setComunidades(lista);
-    });
+            setComunidades(lista);
+        });
 
-    return () => unsubscribe();
+        return () => unsubscribe();
   }, [termoPesquisa, filtroOrdenacao]);
 
   const handleExcluir = (id: string) => {
@@ -531,8 +559,8 @@ function Comunidades(){
                         <div style={{ marginBottom: "15px" }}>
                         <label>Tipo de privacidade:</label>
                         <select id="tipoPrivacidade" style={{ width: "100%", padding: "8px", marginTop: "5px" }}>
-                            <option value="publica">Pública</option>
-                            <option value="privada">Privada</option>
+                            <option value="0">Pública</option>
+                            <option value="1">Privada</option>
                         </select>
                         </div>
                 
@@ -561,33 +589,33 @@ function Comunidades(){
                 {criarDropdownFiltro(filtroOrdenacao, setFiltroOrdenacao)}
 
                 <div id="comunity-list" ref={refs.listaComunidades}>
-                    {comunidadesExibir.length === 0 ? (
+                    {communities.length === 0 ? (
                     <p>Nenhuma comunidade encontrada.</p>
                     ) : (
-                    comunidadesExibir.map((comunidade) => (
-                        <Link to={"/comunidade?id=" + comunidade.id} key={comunidade.id} className="comunity-item">
+                    communities.map((community) => (
+                        <Link to={"/comunidade/" + community.id} key={community.id} className="comunity-item">
                         <img
-                            src={comunidade.banner || no_image_src}
-                            alt={comunidade.nome}
+                            src={community.banner || no_image_src}
+                            alt={community.name}
                             className="banner"
                         />
 
-                        <img className="photo" src={comunidade.imagem || no_photo_comunity} alt={comunidade.nome}/>
+                        <img className="photo" src={community.image || no_photo_comunity} alt={community.name}/>
 
                         <div style={{ fontWeight: "bold", marginBottom: "5px" }}>
-                            {comunidade.nome}
+                            {community.name}
                         </div>
 
                         <div style={{ color: "#666", fontSize: "0.8em" }}>
-                            Membros: {comunidade.membroCount}
+                            Membros: {community.members.length}
                         </div>
 
-                        {usuarioAtual && comunidade.criador === usuarioAtual.uid && (
+                        {usuarioAtual && community.owner === usuarioAtual.uid && (
                             <button
                             style={{ marginTop: "10px" }}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleExcluir(comunidade.id);
+                                handleExcluir(community.id);
                             }}
                             >
                             Excluir

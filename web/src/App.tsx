@@ -9,7 +9,7 @@ import GlobalFunctions from './GlobalFunctions';
 import Home from './Home';
 import Amigos from './Amigos';
 import Chats from "./chats/Chats";
-import Comunidade from "./Comunidade";
+import Comunidade from "./comunidade/Comunidade";
 import Login from "./Login";
 import Perfil from "./Perfil";
 import Registro from "./Registro";
@@ -46,7 +46,7 @@ function App() {
                     <Route path="/amigos" element={<Renderize Element={Amigos}/>} />
                     <Route path="/chats" element={<Renderize Element={Chats}/>} />
                     <Route path="/chat/:id/" element={<Renderize Element={Chats}/>} />
-                    <Route path="/comunidade" element={<Renderize Element={Comunidade}/>} />
+                    <Route path="/comunidade/:id/" element={<Renderize Element={Comunidade}/>} />
                     <Route path="/login" element={<Renderize Element={Login}/>} />
                     <Route path="/registro" element={<Renderize Element={Registro}/>} />
                     <Route path="/perfil" element={<Renderize Element={Perfil}/>} />
