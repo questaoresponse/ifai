@@ -13,8 +13,9 @@ dist/
 
 # deps
 node_modules/
-.wrangler
-!.wrangler/state/d1
+.wrangler/tmp
+.wrangler/state/v3/cache
+.wrangler/state/v3/do
 
 # env
 .env
