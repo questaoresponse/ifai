@@ -25,7 +25,7 @@ app.post("/perfil", async (c: MyContext) => {
     // If has file object, then get the previous file_id to remove
     if (["add-file", "remove-file"].includes(operation)){
         const results = await c.env.DB.prepare("SELECT logo FROM users WHERE uid=?")
-            .bind(uid)
+                           .bind(uid)
             .run()
 
         if (results.results.length == 0){
@@ -96,6 +96,65 @@ app.post("/posts", async (c: MyContext) => {
 
     } catch (err) {
         return c.text('Erro no proxy de upload: ' + String(err), 500)
+    }
+});
+
+app.post("/community", async (c: MyContext) => {
+    try {
+    const uid = c.get("user").uid;
+    const origin = c.get("origin");
+
+    const body = await c.req.parseBody();
+    const { name, description } = body;
+    const privacy = body["privacy"] == "1" ? 1 : 0;
+
+    // Cria novo form
+    var new_timestamp = Math.floor(Date.now() / 1000);
+    var banner_id = null;
+    var image_id = null;
+
+    if ("banner" in body){
+        const formData = new FormData();
+        const file = body['banner'] as File
+        formData.append("file", file, "bn_" + file.name);
+        formData.append("timestamp", String(new_timestamp));
+        formData.append("operation", "add-file");
+        const response = await send_to_server(origin, "/community", formData, false);
+        const response_json = await response.json() as { [key:string]: any };
+        banner_id = response_json.file_id;
+    }
+
+    if ("image" in body){
+        const formData = new FormData();
+        const file = body['image'] as File
+        formData.append("file", file, "im_" + file.name);
+        formData.append("timestamp", String(new_timestamp));
+        formData.append("operation", "add-file");
+        const response = await send_to_server(origin, "/community", formData, false);
+        const response_json = await response.json() as { [key:string]: any };
+        image_id = response_json.file_id;
+    }
+
+    const owner = uid;
+
+    const members = JSON.stringify([uid]);
+
+    // var results = await c.env.DB.prepare("SELECT id FROM communities WHERE (?=communities.uid1 OR ?=communities.uid2) AND (?=communities.uid1 OR ?=communities.uid2)")
+    //     .bind(uid, uid, user_to_navigate_chat, user_to_navigate_chat)
+    //     .all()
+
+    // if (results.results.length > 0){
+    //     return { result: true, chat_id: results.results[0].id };
+    // } else {
+    const community_id = (new_timestamp * 1000 + Math.floor(Math.random() * 999));
+
+    var results = await c.env.DB.prepare("INSERT INTO communities(banner,description,id,image,name,members,owner,privacy,timestamp) VALUES (?,?,?,?,?,?,?,?,?)")
+        .bind(banner_id, description, community_id, image_id, name, members, owner, privacy, new_timestamp)
+        .run()
+    
+    return c.json({ result: true, community_id, banner_id, image_id });
+    } catch (e){
+        console.log(e)
     }
 });
 }

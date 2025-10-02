@@ -1,4 +1,5 @@
 import setChatsApp from "./chats";
+import setcommunitiesApp from "./community";
 import setFriendsApp from "./friends";
 import { SocketServer } from "./SocketServer";
 import { ExtendedBindings, Variables } from "./types";
@@ -59,6 +60,7 @@ export class ChatRoom {
         const socketServer = new SocketServer(server, this.env, variablesObj);
         setFriendsApp(socketServer);
         setChatsApp(socketServer);
+        setcommunitiesApp(socketServer);
         setUserApp(socketServer);
         setFeedApp(socketServer);
         setPostsApp(socketServer);
