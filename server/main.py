@@ -226,18 +226,32 @@ async def posts():
         print(e)
 
 
-@app.route("/comunidades", methods=["POST"])
-async def comunidades():
-    FOLDER_ID = "1WzDR-2mhxFKS5ydLcUeroZXeNwxe-uks"
-    content_type = request.content_type or ''
-    if 'application/json' in content_type:
-        return list_files(FOLDER_ID), 200
-    else:
+@app.route("/community", methods=["POST"])
+async def community():
+    try:
         form = await request.form
         files = await request.files
-        timestamp = form.get("timestamp")
-        filename = files["file"].filename
-        return receive_and_upload_file(FOLDER_ID, f"comunity_{timestamp}_{filename}"), 200
+
+        data = None
+
+        file_to_remove = form.get("file_to_remove")
+        if file_to_remove:
+            delete_file(file_to_remove)
+
+        if form.get("operation") and form.get("operation") == "add-file": 
+            FOLDER_ID = "1dUg29Lk2kLy-CE9JGH6FVLCkeJlsjTAn"
+            timestamp = form.get("timestamp")
+            filename = files["file"].filename
+
+            data = await receive_and_upload_file(FOLDER_ID, f"com_{timestamp}_{filename}", files)
+        else:
+            data = { "result": "true", "file_id": None }
+
+        return jsonify(data), 200
+    
+    except Exception as e:
+        print(e)
+
 
 @app.route("/perfil", methods=["POST"])
 async def perfil():
