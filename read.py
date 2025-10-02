@@ -23,10 +23,19 @@ cursor = conn.cursor()
 #     chat_id INTEGER,
 #     id INTEGER UNIQUE
 # )""")
-# cursor.execute("""ALTER TABLE posts ADD deleted INTEGER""")
-# cursor.execute("""DELETE FROM posts WHERE timestamp >= 1755565097556""")
-# conn.commit()
-cursor.execute("SELECT name,tokens FROM users")
+cursor.execute("""ALTER TABLE communities ADD banner TEXT""")
+# cursor.execute("""CREATE TABLE communities(
+#     description TEXT,
+#     id INTEGER UNIQUE,
+#     image TEXT,
+#     name TEXT,
+#     members TEXT,
+#     owner TEXT,
+#     privacy INTEGER,
+#     timestamp INTEGER
+# )""")
+conn.commit()
+cursor.execute("SELECT * FROM communities")
 for row in cursor.fetchall():
     print(row)
 

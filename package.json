@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "dev": "node scripts/dev.cjs"
+  },
   "dependencies": {
     "sqlite3": "^5.1.7",
     "wrangler": "^4.28.1"
